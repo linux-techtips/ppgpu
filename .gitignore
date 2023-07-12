@@ -2,6 +2,8 @@
 build/
 
 compile_commands.json
+entry.cpp
+defer.hpp
 
 *.cache
 

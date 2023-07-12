@@ -1,14 +1,7 @@
 #pragma once
 
+#include <algorithm>
 #include <memory>
-
-extern "C" {
-    #include <glfw3webgpu/glfw3webgpu.h>
-}
-
-#ifndef WEBGPU_H_ 
-#error "Make sure to include the WEBGPU C header prior to this."
-#endif
 
 #define WGPU_TARGET_MACOS 1
 #define WGPU_TARGET_LINUX_X11 2
@@ -114,34 +107,35 @@ namespace wgpu {
     struct RenderPipelineDescriptor;
 
     namespace impl {
-        using Adapter = WGPUAdapterImpl*;
-        using BindGroup = WGPUBindGroupImpl*;
-        using BindGroupLayout = WGPUBindGroupLayoutImpl*;
-        using Buffer = WGPUBufferImpl*;
-        using CommandBuffer = WGPUCommandBufferImpl*;
-        using CommandEncoder = WGPUCommandEncoderImpl*;
-        using ComputePassEncoder = WGPUComputePassEncoderImpl*;
-        using ComputePipeline = WGPUComputePipelineImpl*;
-        using Device = WGPUDeviceImpl*;
-        using Instance = WGPUInstanceImpl*;
-        using PipelineLayout = WGPUPipelineLayoutImpl*;
-        using QuerySet = WGPUQuerySetImpl*;
-        using Queue = WGPUQueueImpl*;
-        using RenderBundle = WGPURenderBundleImpl*;
-        using RenderBundleEncoder = WGPURenderBundleEncoderImpl*;
-        using RenderPassEncoder = WGPURenderPassEncoderImpl*;
-        using RenderPipeline = WGPURenderPipelineImpl*;
-        using Sampler = WGPUSamplerImpl*;
-        using ShaderModule = WGPUShaderModuleImpl*;
-        using Surface = WGPUSurfaceImpl*;
-        using SwapChain = WGPUSwapChainImpl*;
-        using Texture = WGPUTextureImpl*;
-        using TextureView = WGPUTextureViewImpl*;
+        
+        using Adapter = struct WGPUAdapterImpl*;
+        using BindGroup = struct WGPUBindGroupImpl*;
+        using BindGroupLayout = struct WGPUBindGroupLayoutImpl*;
+        using Buffer = struct WGPUBufferImpl*;
+        using CommandBuffer = struct WGPUCommandBufferImpl*;
+        using CommandEncoder = struct WGPUCommandEncoderImpl*;
+        using ComputePassEncoder = struct WGPUComputePassEncoderImpl*;
+        using ComputePipeline = struct WGPUComputePipelineImpl*;
+        using Device = struct WGPUDeviceImpl*;
+        using Instance = struct WGPUInstanceImpl*;
+        using PipelineLayout = struct WGPUPipelineLayoutImpl*;
+        using QuerySet = struct WGPUQuerySetImpl*;
+        using Queue = struct WGPUQueueImpl*;
+        using RenderBundle = struct WGPURenderBundleImpl*;
+        using RenderBundleEncoder = struct WGPURenderBundleEncoderImpl*;
+        using RenderPassEncoder = struct WGPURenderPassEncoderImpl*;
+        using RenderPipeline = struct WGPURenderPipelineImpl*;
+        using Sampler = struct WGPUSamplerImpl*;
+        using ShaderModule = struct WGPUShaderModuleImpl*;
+        using Surface = struct WGPUSurfaceImpl*;
+        using SwapChain = struct WGPUSwapChainImpl*;
+        using Texture = struct WGPUTextureImpl*;
+        using TextureView = struct WGPUTextureViewImpl*;
     } // namespace impl
 
     // ENUMERATIONS
 
-    #define ENUM(Name) enum class Name {
+    #define ENUM(Name) enum class Name : int32_t {
 
     template <typename T>
     static constexpr auto Force32() -> T {
@@ -377,10 +371,10 @@ namespace wgpu {
     END
 
     ENUM(RequestAdapterStatus)
-        Success,
-        Unavailable,
-        Error,
-        Unknown,
+        Success = 0x00000000,
+        Unavailable = 0x00000001,
+        Error = 0x00000002,
+        Unknown = 0x00000003,
     END
 
     ENUM(RequestDeviceStatus)
@@ -783,16 +777,6 @@ namespace wgpu {
         } 
     };
 
-    struct NonAggregateWGPUCast {
-        template <typename To, typename From>
-        static inline auto cast(From val) -> To {
-            static_assert(NonAggregateWGPUCompatible<RawType<To>, RawType<From>>);
-            return reinterpret_cast<To>(val);
-        }
-    };
-
-    #define _WGPU_H_COMPAT
-
 #ifdef _WGPU_H_COMPAT
     #define STRUCT_CAST_IMPL(Name, Cast) \
         struct Name { \
@@ -804,7 +788,6 @@ namespace wgpu {
 #endif // _WGPU_H_COMPAT
     
     #define STRUCT(Name) STRUCT_CAST_IMPL(Name, DefaultWGPUCast)
-    #define STRUCT_NON_AGGREGATE(Name) STRUCT_CAST_IMPL(Name, NonAggregateWGPUCast)
 
     STRUCT(ChainedStruct)
         ChainedStruct const* next {};
@@ -987,6 +970,7 @@ namespace wgpu {
     END
 
     // CALLBACKS
+    
     using BufferMapCallback = auto(*)(BufferMapAsyncStatus) -> void;
     using CompilationInfoCallback = auto(*)(CompilationInfoRequestStatus status, CompilationInfo& compilation_info, void* user_data) -> void;
     using CreateComputePipelineAsyncCallback = auto(*)(CreatePipelineAsyncStatus status, impl::ComputePipeline pipeline, CStr msg, void* user_data) -> void;
@@ -1339,19 +1323,988 @@ namespace wgpu {
     END
 
     // EXTERNAL DEFINITIONS
-    
-    extern "C" {
-        auto wgpuCreateInstance(
-            InstanceDescriptor const* desc
-        ) -> impl::Instance;
+   
+    namespace native {
+        extern "C" {
+            
+            auto wgpuCreateInstance(
+                InstanceDescriptor const* desc
+            ) -> impl::Instance;
 
-        auto wgpuInstanceRequestAdapter(
-            impl::Instance instance,
-            RequestAdapterOptions const* opts,
-            RequestAdapterCallback callback,
-            void* user_data
-        ) -> void;
-    }
+            // Adapter Methods
+            auto wgpuAdapterEnumerateFeatures(
+                impl::Adapter adapter,
+                FeatureName* features 
+            ) -> size_t;
+
+            auto wgpuAdapterGetLimits(
+                impl::Adapter adapter,
+                SupportedLimits* limits 
+            ) -> bool;
+
+            auto wgpuAdapterGetProperties(
+                impl::Adapter adapter,
+                AdapterProperties* props
+            ) -> void;
+
+            auto wgpuAdapterHasFeature(
+                impl::Adapter adapter,
+                FeatureName feature
+            ) -> bool;
+
+            auto wgpuAdapterRequestDevice(
+                impl::Adapter adapter,
+                DeviceDescriptor const* desc,
+                RequestDeviceCallback callback,
+                void* user_data
+            ) -> void;
+
+            auto wgpuAdapterReference(
+                impl::Adapter adapter
+            ) -> void;
+
+            auto wgpuAdapterRelease(
+                impl::Adapter adapter
+            ) -> void;
+
+            // BindGroup Methods
+
+            auto wgpuBindGroupSetLabel(
+                impl::BindGroup bind_group,
+                CStr label
+            ) -> void;
+
+            auto wgpuBindGroupReference(
+                impl::BindGroup bind_group
+            ) -> void;
+
+            auto wgpuBindGroupRelease(
+                impl::BindGroup bind_group
+            ) -> void;
+
+            // BindGroupLayout Methods
+            
+            auto wgpuBindGroupLayoutSetLabel(
+                impl::BindGroupLayout bind_group_layout,
+                CStr label
+            ) -> void;
+
+            auto wgpuBindGroupLayoutReference(
+                impl::BindGroupLayout bind_group_layout
+            ) -> void;
+
+            auto wgpuBindGroupLayoutRelease(
+                impl::BindGroupLayout bind_group_layout
+            ) -> void;
+
+            // Buffer Methods
+            
+            auto wgpuBufferDestroy(
+                impl::Buffer buffer
+            ) -> void;
+
+            auto wgpuBufferGetConstMappedRange(
+                impl::Buffer buffer,
+                size_t offset,
+                size_t size
+            ) -> void const*;
+
+            auto wgpuBufferGetMapState(
+                impl::Buffer buffer
+            ) -> BufferMapState;
+
+            auto wgpuBufferGetMappedRange(
+                impl::Buffer buffer,
+                size_t offset,
+                size_t size
+            ) -> void*;
+
+            auto wgpuBufferGetSize(
+                impl::Buffer buffer
+            ) -> uint64_t;
+
+            auto wgpuBufferGetUsage(
+                impl::Buffer buffer
+            ) -> BufferUsageFlags;
+
+            auto wgpuBufferMapAsync(
+                impl::Buffer buffer,
+                MapModeFlags mode,
+                size_t offset,
+                size_t size,
+                BufferMapCallback callback,
+                void* user_data
+            ) -> void;
+
+            auto wgpuBufferSetLabel(
+                impl::Buffer buffer,
+                CStr label
+            ) -> void;
+
+            auto wgpuBufferUnmap(
+                impl::Buffer buffer
+            ) -> void;
+
+            auto wgpuBufferReference(
+                impl::Buffer buffer
+            ) -> void;
+
+            auto wgpuBufferRelease(
+                impl::Buffer buffer
+            ) -> void;
+
+            // CommandBuffer Methods
+            
+            auto wgpuCommandBufferSetLabel(
+                impl::CommandBuffer command_buffer,
+                CStr label
+            ) -> void;
+
+            auto wgpuCommandBufferReference(
+                impl::CommandBuffer command_buffer
+            ) -> void;
+
+            auto wgpuCommandBufferRelease(
+                impl::CommandBuffer command_buffer
+            ) -> void;
+
+            // CommandEncoder
+
+            auto wgpuCommandEncoderBeginComputePass(
+                impl::CommandEncoder encoder,
+                ComputePassDescriptor const* desc
+            ) -> impl::ComputePassEncoder;
+
+            auto wgpuCommandEncoderBeginRenderPass(
+                impl::CommandEncoder encoder,
+                RenderPassDescriptor const* desc
+            ) -> impl::RenderPassEncoder;
+
+            auto wgpuCommandEncoderClearBuffer(
+                impl::CommandEncoder encoder,
+                impl::Buffer buffer,
+                uint64_t offset,
+                uint64_t size
+            ) -> void;
+
+            auto wgpuCommandEncoderCopyBufferToBuffer(
+               impl::CommandEncoder encoder,
+               impl::Buffer src,
+               uint64_t src_offset,
+               impl::Buffer dest,
+               uint64_t dest_offset,
+               uint64_t size
+            ) -> void;
+
+            auto wgpuCommandEncoderCopyBufferToTexture(
+                impl::CommandEncoder encoder,
+                ImageCopyBuffer const* src,
+                ImageCopyTexture const* dest,
+                Extent3D const* size
+            ) -> void;
+
+            auto wgpuCommandEncoderCopyTextureToBuffer(
+                impl::CommandEncoder encoder,
+                ImageCopyTexture const* src,
+                ImageCopyBuffer const* dest,
+                Extent3D const* size
+            ) -> void;
+
+            auto wgpuCommandEncoderCopyTextureToTexture(
+                impl::CommandEncoder encoder,
+                ImageCopyTexture const* src,
+                ImageCopyTexture const* dest,
+                Extent3D const* size
+            ) -> void;
+
+            auto wgpuCommandEncoderFinish(
+                impl::CommandEncoder encoder,
+                CommandBufferDescriptor const* desc
+            ) -> impl::CommandBuffer;
+
+            auto wgpuCommandEncoderInsertDebugMarker(
+                impl::CommandEncoder encoder,
+                CStr marker_label
+            ) -> void;
+
+            auto wgpuCommandEncoderPopDebugGroup(
+                impl::CommandEncoder encoder
+            ) -> void;
+
+            auto wgpuCommandEncoderPushDebugGroup(
+                impl::CommandEncoder encoder,
+                CStr group_label
+            ) -> void;
+
+            auto wgpuCommandEncoderResolveQuerySet(
+                impl::CommandEncoder encoder,
+                impl::QuerySet query_set,
+                uint32_t first,
+                uint32_t count,
+                impl::Buffer dest,
+                uint64_t offset
+            ) -> void;
+
+            auto wgpuCommandEncoderSetLabel(
+                impl::CommandEncoder encoder,
+                CStr label
+            ) -> void;
+
+            auto wgpuCommandEncoderWriteTimestamp(
+                impl::CommandEncoder encoder,
+                impl::QuerySet query_set,
+                uint32_t idx
+            ) -> void;
+
+            auto wgpuCommandEncoderReference(
+                impl::CommandEncoder encoder
+            ) -> void;
+
+            auto wgpuCommandEncoderRelease(
+                impl::CommandEncoder encoder
+            ) -> void;
+
+            // ComputePassEncoder Methods
+
+            auto wgpuComputePassEncoderBeginPipelineStatisticsQuery(
+                impl::ComputePassEncoder encoder,
+                impl::QuerySet query_set,
+                uint32_t idx
+            ) -> void;
+
+            auto wgpuComputePassEncoderDispatchWorkgroups(
+                impl::ComputePassEncoder encoder,
+                uint32_t workgroup_count_x,
+                uint32_t workgroup_count_y,
+                uint32_t workgroup_count_z
+            ) -> void;
+
+            auto wgpuComputePassEncoderDispatchWorkgroupsIndirect(
+                impl::ComputePassEncoder encoder,
+                impl::Buffer indirect_buffer,
+                uint64_t indirect_offset
+            ) -> void;
+
+            auto wgpuComputePassEncoderEnd(
+                impl::ComputePassEncoder encoder
+            ) -> void;
+
+            auto wgpuComputePassEncoderEndPipelineStatisticsQuery(
+                impl::ComputePassEncoder encoder
+            ) -> void;
+
+            auto wgpuComputePassEncoderInsertDebugMarker(
+                impl::ComputePassEncoder encoder,
+                CStr marker_label
+            ) -> void;
+
+            auto wgpuComputePassEncoderPopDebugGroup(
+                impl::ComputePassEncoder encoder
+            ) -> void;
+
+            auto wgpuComputePassEncoderPushDebugGroup(
+                impl::ComputePassEncoder encoder,
+                CStr group_label
+            ) -> void;
+
+            auto wgpuComputePassEncoderSetBindGroup(
+                impl::ComputePassEncoder encoder,
+                uint32_t group_idx,
+                impl::BindGroup group,
+                size_t dynamic_offset_count,
+                uint32_t const* dynamic_offsets
+            ) -> void;
+
+            auto wgpuComputePassEncoderSetLabel(
+                impl::ComputePassEncoder encoder,
+                CStr label
+            ) -> void;
+
+            auto wgpuComputePassEncoderSetPipeline(
+                impl::ComputePassEncoder encoder,
+                impl::ComputePipeline pipeline
+            ) -> void;
+
+            auto wgpuComputePassEncoderReference(
+                impl::ComputePassEncoder encoder
+            ) -> void;
+
+            auto wgpuComputePassEncoderRelease(
+                impl::ComputePassEncoder encoder
+            ) -> void;
+
+            // ComputePipeline Methods
+
+            auto wgpuComputePipelineGetBindGroupLayout(
+                impl::ComputePipeline pipeline,
+                uint32_t group_idx
+            ) -> impl::BindGroupLayout;
+
+            auto wgpuComputePipelineSetLabel(
+                impl::ComputePipeline pipeline,
+                CStr label
+            ) -> void;
+
+            auto wgpuComputePipelineReference(
+                impl::ComputePipeline pipeline
+            ) -> void;
+
+            auto wgpuComputePipelineRelease(
+                impl::ComputePipeline pipeline
+            ) -> void;
+
+            // Device Methods
+            
+            auto wgpuDeviceCreateBindGroup(
+                impl::Device device,
+                BindGroupDescriptor const* desc
+            ) -> impl::BindGroup;
+
+            auto wgpuDeviceCreateBindGroupLayout(
+                impl::Device device,
+                BindGroupLayoutDescriptor const* desc
+            ) -> impl::BindGroupLayout;
+
+            auto wgpuDeviceCreateBuffer(
+                impl::Device device,
+                BufferDescriptor const * desc
+            ) -> impl::Buffer;
+
+            auto wgpuDeviceCreateCommandEncoder(
+                impl::Device device,
+                CommandEncoderDescriptor const* desc
+            ) -> impl::CommandEncoder;
+
+            auto wgpuDeviceCreateComputePipeline(
+                impl::Device device,
+                ComputePipelineDescriptor const* desc
+            ) -> impl::ComputePipeline;
+
+            auto wgpuDeviceCreateComputePipelineAsync(
+                impl::Device device,
+                ComputePipelineDescriptor const* desc,
+                CreateComputePipelineAsyncCallback callback,
+                void* user_data
+            ) -> void;
+
+            auto wgpuDeviceCreatePipelineLayout(
+                impl::Device device,
+                PipelineLayoutDescriptor const* desc
+            ) -> impl::PipelineLayout;
+
+            auto wgpuDeviceCreateQuerySet(
+                impl::Device device,
+                QuerySetDescriptor const* desc
+            ) -> impl::QuerySet;
+
+            auto wgpuDeviceCreateRenderBundleEncoder(
+                impl::Device device,
+                RenderBundleEncoderDescriptor const* desc
+            ) -> impl::RenderBundleEncoder;
+
+            auto wgpuDeviceCreateRenderPipeline(
+                impl::Device device,
+                RenderPipelineDescriptor const* desc
+            ) -> impl::RenderPipeline;
+
+            auto wgpuDeviceCreateRenderPipelineAsync(
+                impl::Device device,
+                RenderPipelineDescriptor const* desc,
+                CreateRenderPipelineAsyncCallback callback,
+                void* user_data
+            ) -> void;
+
+            auto wgpuDeviceCreateSampler(
+                impl::Device device,
+                SamplerDescriptor const* desc
+            ) -> impl::Sampler;
+
+            auto wgpuDeviceCreateShaderModule(
+                impl::Device device,
+                ShaderModuleDescriptor const* desc
+            ) -> impl::ShaderModule;
+
+            auto wgpuDeviceCreateSwapChain(
+                impl::Device device,
+                impl::Surface surface,
+                SwapChainDescriptor const* desc
+            ) -> impl::SwapChain;
+
+            auto wgpuDeviceCreateTexture(
+                impl::Device device,
+                TextureDescriptor const* desc
+            ) -> impl::Texture;
+
+            auto wgpuDeviceDestroy(
+                impl::Device device
+            ) -> void;
+ 
+            auto wgpuDeviceEnumerateFeatures(
+                impl::Device device,
+                FeatureName* features
+            ) -> size_t;
+
+            auto wgpuDeviceGetLimits(
+                impl::Device device,
+                SupportedLimits* limits
+            ) -> bool;
+
+            auto wgpuDeviceGetQueue(
+                impl::Device device
+            ) -> impl::Queue;
+
+            auto wgpuDeviceHasFeature(
+                impl::Device device,
+                FeatureName feature
+            ) -> bool;
+
+            auto wgpuDevicePopErrorScope(
+                impl::Device device,
+                ErrorCallback callback,
+                void* user_data
+            ) -> void;
+
+            auto wgpuDevicePushErrorScope(
+                impl::Device device,
+                ErrorFilter filter
+            ) -> void;
+
+            auto wgpuDeviceSetLabel(
+                impl::Device device,
+                CStr label
+            ) -> void;
+
+            auto wgpuDeviceSetUncapturedErrorCallback(
+                impl::Device device,
+                ErrorCallback callback,
+                void* user_data
+            ) -> void;
+
+            auto wgpuDeviceReference(
+                impl::Device device
+            ) -> void;
+
+            auto wgpuDeviceRelease(
+                impl::Device device
+            ) -> void;
+
+            // Instance Methods
+
+            auto wgpuInstanceCreateSurface(
+                impl::Instance instance,
+                SurfaceDescriptor const* desc
+            ) -> impl::Surface;
+
+            auto wgpuInstanceProcessEvents(
+                impl::Instance instance
+            ) -> void;
+
+            auto wgpuInstanceRequestAdapter(
+                impl::Instance instance,
+                RequestAdapterOptions const* opts,
+                RequestAdapterCallback callback,
+                void* user_data
+            ) -> impl::Adapter;
+
+            auto wgpuInstanceReference(
+                impl::Instance instance
+            ) -> void;
+
+            auto wgpuInstanceRelease(
+                impl::Instance instance
+            ) -> void;
+
+            // PipelineLayout Methods
+            
+            auto wgpuPipelineLayoutSetLabel(
+                impl::PipelineLayout layout,
+                CStr label
+            ) -> void;
+
+            auto wgpuPipelineLayoutReference(
+                impl::PipelineLayout layout
+            ) -> void;
+
+            auto wgpuPipelineLayoutRelease(
+                impl::PipelineLayout layout
+            ) -> void;
+
+            // QuerySet Methods
+            auto wgpuQuerySetDestroy(
+                impl::QuerySet query_set
+            ) -> void;
+
+            auto wgpuQuerySetGetCount(
+               impl::QuerySet query_set 
+            ) -> uint32_t;
+
+            auto wgpuQuerySetGetType(
+                impl::QuerySet query_set
+            ) -> QueryType;
+
+            auto wgpuQuerySetReference(
+                impl::QuerySet query_set
+            ) -> void;
+
+            auto wgpuQuerySetRelease(
+                impl::QuerySet query_set
+            ) -> void;
+
+            // Queue Methods
+            auto wgpuQueueOnSubmittedWorkDone(
+                impl::Queue queue,
+                QueueWorkDoneCallback callback,
+                void* user_data
+            ) -> void;
+
+            auto wgpuQueueSetLabel(
+                impl::Queue queue,
+                CStr label
+            ) -> void;
+
+            auto wgpuQueueSubmit(
+                impl::Queue queue,
+                size_t command_count,
+                impl::CommandBuffer const* commands
+            ) -> void;
+
+            auto wgpuQueueWriteBuffer(
+                impl::Queue queue,
+                impl::Buffer buffer,
+                uint64_t offset,
+                void const* data,
+                size_t size
+            ) -> void;
+
+            auto wgpuQueueWriteTexture(
+                impl::Queue queue,
+                ImageCopyTexture const* dest,
+                void const* data,
+                size_t data_size,
+                TextureDataLayout const* data_layout,
+                Extent3D const* write_size
+            ) -> void;
+
+            auto wgpuQueueReference(
+                impl::Queue queue
+            ) -> void;
+
+            auto wgpuQueueRelease(
+                impl::Queue queue
+            ) -> void;
+
+            // RenderBundle Methods
+            
+            auto wgpuRenderBundleSetLabel(
+                impl::RenderBundle render_bundle,
+                CStr label
+            ) -> void;
+
+            auto wgpuRenderBundleReference(
+                impl::RenderBundle render_bundle
+            ) -> void;
+
+            auto wgpuRenderBundleRelease(
+                impl::RenderBundle render_bundle
+            ) -> void;
+
+            // RenderBundleEncoder Methods
+
+            auto wgpuRenderBundleEncoderDraw(
+                impl::RenderBundleEncoder encoder,
+                uint32_t vertex_count,
+                uint32_t instance_count,
+                uint32_t first_vertex,
+                uint32_t first_instance
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderDrawIndexed(
+                impl::RenderBundleEncoder encoder,
+                uint32_t index_count,
+                uint32_t instance_count,
+                uint32_t first_index,
+                int32_t base_vertex,
+                int32_t first_instance
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderDrawIndexedIndirect(
+                impl::RenderBundleEncoder encoder,
+                impl::Buffer indirect_buffer,
+                uint64_t indirect_offset
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderDrawIndirect(
+                impl::RenderBundleEncoder encoder,
+                impl::Buffer indirect_buffer,
+                uint64_t indirect_offset
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderFinish(
+                impl::RenderBundleEncoder encoder,
+                RenderBundleEncoderDescriptor const* desc
+            ) -> impl::RenderBundle;
+
+            auto wgpuRenderBundleEncoderInsertDebugMarker(
+                impl::RenderBundleEncoder encoder,
+                CStr marker_label
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderPopDebugGroup(
+                impl::RenderBundleEncoder encoder
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderPushDebugGroup(
+                impl::RenderBundleEncoder encoder,
+                CStr group_label
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderSetBindGroup(
+                impl::RenderBundleEncoder encoder,
+                uint32_t group_idx,
+                impl::BindGroup group,
+                size_t dynamic_offset_count,
+                uint32_t const* dynamic_offsets
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderSetIndexBuffer(
+                impl::RenderBundleEncoder encoder,
+                impl::Buffer buffer,
+                IndexFormat fomat,
+                uint64_t offset,
+                uint64_t size
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderSetLabel(
+                impl::RenderBundleEncoder encoder,
+                CStr label
+            ) -> void;
+            
+            auto wgpuRenderBundleEncoderSetPipeline(
+                impl::RenderBundleEncoder encoder,
+                impl::RenderPipeline pipeline
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderSetVertexBuffer(
+                impl::RenderBundleEncoder encoder,
+                uint32_t slot,
+                impl::Buffer buffer,
+                uint64_t offset,
+                uint64_t size
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderReference(
+                impl::RenderBundleEncoder encoder
+            ) -> void;
+
+            auto wgpuRenderBundleEncoderRelease(
+                impl::RenderBundleEncoder encoder
+            ) -> void;
+
+            // RenderPassEncoder Methods
+            
+            auto wgpuRenderPassEncoderBeginOcclusionQuery(
+                impl::RenderPassEncoder encoder,
+                uint32_t query_idx
+            ) -> void;
+
+            auto wgpuRenderPassEncoderBeginPipelineStatisticsQuery(
+                impl::RenderPassEncoder encoder,
+                impl::QuerySet query_set,
+                uint32_t query_idx
+            ) -> void;
+
+            auto wgpuRenderPassEncoderDraw(
+                impl::RenderPassEncoder encoder,
+                uint32_t vertex_count,
+                uint32_t instance_count,
+                uint32_t first_vertex,
+                uint32_t first_instance
+            ) -> void;
+
+            auto wgpuRenderPassEncoderDrawIndexed(
+                impl::RenderPassEncoder encoder,
+                uint32_t index_count,
+                uint32_t instance_count,
+                uint32_t first_index,
+                int32_t base_vertex,
+                uint32_t first_instance
+            ) -> void;
+
+            auto wgpuRenderPassEncoderDrawIndexedIndirect(
+                impl::RenderPassEncoder encoder,
+                impl::Buffer indirect_buffer,
+                uint64_t indirect_offset
+            ) -> void;
+
+            auto wgpuRenderPassEncoderDrawIndirect(
+                impl::RenderPassEncoder encoder,
+                impl::Buffer indirect_buffer,
+                uint64_t indirect_offset
+            ) -> void;
+
+            auto wgpuRenderPassEncoderEnd(
+                impl::RenderPassEncoder encoder
+            ) -> void;
+
+            auto wgpuRenderPassEncoderEndOcclusionQuery(
+                impl::RenderPassEncoder encoder
+            ) -> void;
+
+            auto wgpuRenderPassEncoderEndPipelineStatisticsQuery(
+                impl::RenderPassEncoder encoder
+            ) -> void;
+
+            auto wgpuRenderPassEncoderExecuteBundles(
+                impl::RenderPassEncoder encoder,
+                size_t bundle_count,
+                impl::RenderBundle const* bundles
+            ) -> void;
+
+            auto wgpuRenderPassEncoderInsertDebugMarker(
+                impl::RenderPassEncoder encoder,
+                CStr marker_label
+            ) -> void;
+
+            auto wgpuRenderPassEncoderPopDebugGroup(
+                impl::RenderPassEncoder encoder
+            ) -> void;
+
+            auto wgpuRenderPassEncoderPushDebugGroup(
+                impl::RenderPassEncoder encoder,
+                CStr group_label
+            ) -> void;
+
+            auto wgpuRenderPassEncoderSetBindGroup(
+                impl::RenderPassEncoder encoder,
+                uint32_t group_idx,
+                impl::BindGroup group,
+                size_t dynamic_offset_count,
+                uint32_t const* dynamic_offsets
+            ) -> void;
+
+            auto wgpuRenderPassEncoderSetBlendConstant(
+                impl::RenderPassEncoder encoder,
+                Color const* color
+            ) -> void;
+
+            auto wgpuRenderPassEncoderSetIndexBuffer(
+                impl::RenderPassEncoder encoder,
+                impl::Buffer buffer,
+                IndexFormat format,
+                uint64_t offset,
+                uint64_t size
+            ) -> void;
+
+            auto wgpuRenderPassEncoderSetLabel(
+                impl::RenderPassEncoder encoder,
+                CStr label
+            ) -> void;
+
+            auto wgpuRenderPassEncoderSetPipeline(
+                impl::RenderPassEncoder encoder,
+                impl::RenderPipeline pipeline
+            ) -> void;
+
+            auto wgpuRenderPassEncoderSetScissorRect(
+                impl::RenderPassEncoder encoder,
+                uint32_t x,
+                uint32_t y,
+                uint32_t width,
+                uint32_t height
+            ) -> void;
+
+            auto wgpuRenderPassEncoderSetStencilReference(
+                impl::RenderPassEncoder encoder,
+                uint32_t reference
+            ) -> void;
+
+            auto wgpuRenderPassEncoderSetVertexBuffer(
+                impl::RenderPassEncoder encoder,
+                uint32_t slot,
+                impl::Buffer buffer,
+                uint64_t offset,
+                uint64_t size
+            ) -> void;
+
+            auto wgpuRenderPassEncoderSetViewport(
+                impl::RenderPassEncoder encoder,
+                float x,
+                float y,
+                float width,
+                float height,
+                float min_depth,
+                float max_depth
+            ) -> void;
+
+            auto wgpuRenderPassEncoderReference(
+                impl::RenderPassEncoder encoder
+            ) -> void;
+
+            auto wgpuRenderPassEncoderRelease(
+                impl::RenderPassEncoder encoder
+            ) -> void;
+        
+            // RenderPipeline Methods
+            
+            auto wgpuRenderPipelineGetBindGroupLayout(
+                impl::RenderPipeline pipeline,
+                uint32_t group_idx
+            ) -> impl::BindGroupLayout;
+        
+            auto wgpuRenderPipelineSetLabel(
+                impl::RenderPipeline pipeline,
+                CStr label
+            ) -> void;
+
+            auto wgpuRenderPipelineReference(
+                impl::RenderPipeline pipeline
+            ) -> void;
+
+            auto wgpuRenderPipelineRelease(
+                impl::RenderPipeline pipeline
+            ) -> void;
+
+            // Sampler Methods
+            
+            auto wgpuSamplerSetLabel(
+                impl::Sampler sampler,
+                CStr label
+            ) -> void;
+
+            auto wgpuSamplerReference(
+                impl::Sampler sampler
+            ) -> void;
+
+            auto wgpuSamplerRelease(
+                impl::Sampler sampler
+            ) -> void;
+
+            // ShaderModue Methods
+            
+            auto wgpuShaderModuleGetCompilationInfo(
+                impl::ShaderModule shader_module,
+                CompilationInfoCallback callback,
+                void* user_data
+            ) -> void;
+
+            auto wgpuShaderModuleSetLabel(
+                impl::ShaderModule shader_module,
+                CStr label
+            ) -> void;
+
+            auto wgpuShaderModuleReference(
+                impl::ShaderModule shader_module
+            ) -> void;
+
+            auto wgpuShaderModuleRelease(
+                impl::ShaderModule shader_module
+            ) -> void;
+
+            // Surface Methods
+            
+            auto wgpuSurfaceGetPreferredFormat(
+                impl::Surface surface,
+                impl::Adapter adapter
+            ) -> TextureFormat;
+
+            auto wgpuSurfaceReference(
+                impl::Surface surface
+            ) -> void;
+
+            auto wgpuSurfaceRelease(
+                impl::Surface surface
+            ) -> void;
+
+            // SwapChain Methods
+            
+            auto wgpuSwapChainGetCurrentTextureView(
+                impl::SwapChain swapchain
+            ) -> impl::TextureView;
+
+            auto wgpuSwapChainPresent(
+                impl::SwapChain swapchain 
+            ) -> void;
+
+            auto wgpuSwapChainReference(
+                impl::SwapChain swapchain
+            ) -> void;
+
+            auto wgpuSwapChainRelease(
+                impl::SwapChain swapchain
+            ) -> void;
+
+            // Texture Methods
+            
+            auto wgpuTextureCreateView(
+                impl::Texture texture,
+                TextureViewDescriptor const* descriptor
+            ) -> impl::TextureView;
+
+            auto wgpuTextureDestroy(
+                impl::Texture texture
+            ) -> void;
+
+            auto wgpuTextureGetDepthOrArrayLayers(
+                impl::Texture texture
+            ) -> uint32_t;
+
+            auto wgpuTextureGetDimension(
+                impl::Texture texture
+            ) -> TextureDimension;
+
+            auto wgpuTextureGetFormat(
+                impl::Texture texture 
+            ) -> TextureFormat;
+
+            auto wgpuTextureGetHeight(
+                impl::Texture texture
+            ) -> uint32_t;
+
+            auto wgpuTextureGetMipLevelCount(
+                impl::Texture texture
+            ) -> uint32_t;
+
+            auto wgpuTextureGetSampleCount(
+                impl::Texture texture
+            ) -> uint32_t;
+
+            auto wgpuTextureGetUsage(
+                impl::Texture texture
+            ) -> TextureUsageFlags;
+
+            auto wgpuTextureGetWidth(
+                impl::Texture texture
+            ) -> uint32_t;
+
+            auto wgpuTextureSetLabel(
+                impl::Texture texture,
+                CStr label
+            ) -> void;
+
+            auto wgpuTextureReference(
+                impl::Texture texture
+            ) -> void;
+
+            auto wgpuTextureRelease(
+                impl::Texture texture
+            ) -> void;
+
+            // TextureView Methods
+
+            auto wgpuTextureViewSetLabel(
+                impl::TextureView texture,
+                CStr label
+            ) -> void;
+
+            auto wgpuTextureViewReference(
+                impl::TextureView texture
+            ) -> void;
+
+            auto wgpuTextureViewRelease(
+                impl::TextureView texture
+            ) -> void;
+        }
+    } // namespace native 
 
     // HANDLE FORWARD DECLARATIONS
 
@@ -1384,185 +2337,181 @@ namespace wgpu {
     #define HANDLE(Type) \
         struct Type { \
         using Impl = impl::Type; \
-        [[no_unique_address]] Impl inner; \
+        Impl inner; \
         inline operator Impl&() { return inner; } \
         inline operator const Impl&() const { return inner; } \
-        inline auto reference() -> void; \
-        inline auto release() -> void; \
+        inline operator bool() const { return (inner) ? true : false; } \
+        inline auto reference() -> void { native::wgpu ## Type ## Reference(*this); }; \
+        inline auto release() -> void { native::wgpu ## Type ## Release(*this); }; \
 
     HANDLE(Adapter)
-        auto enumerate_features(FeatureName* features) -> size_t;
-        auto get_limits(SupportedLimits* limits) -> bool;
-        auto get_properties(AdapterProperties* properties) -> void;
-        auto has_feature(FeatureName feature) -> bool;
-        auto request_device(const DeviceDescriptor& descriptor, RequestDeviceCallback&& callback) -> std::unique_ptr<RequestDeviceCallback>;
-        auto request_device(const DeviceDescriptor& descriptor) -> Device;
+        inline auto enumerate_features(FeatureName* features) -> size_t;
+        inline auto get_limits(SupportedLimits* limits) -> bool;
+        inline auto get_properties(AdapterProperties* properties) -> void;
+        inline auto has_feature(FeatureName feature) -> bool;
+        inline auto request_device(const DeviceDescriptor& descriptor, RequestDeviceCallback&& callback) -> std::unique_ptr<RequestDeviceCallback>;
     END
 
     HANDLE(BindGroup)
-        auto label(CStr label) -> void;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(BindGroupLayout)
-        auto label(CStr label) -> void;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(Buffer)
-        auto label(CStr label) -> void;
-        auto destroy() -> void;
-        auto get_const_mapped_range(size_t offset, size_t size) -> void const*;
-        auto get_map_state() -> BufferMapState;
-        auto get_size() -> uint64_t;
-        auto get_usage() -> BufferUsage;
-        auto map_async(
+        inline auto label(CStr label) -> void;
+        inline auto destroy() -> void;
+        inline auto get_const_mapped_range(size_t offset, size_t size) -> void const*;
+        [[nodiscard]] inline auto get_map_state() -> BufferMapState;
+        [[nodiscard]] inline auto get_size() -> uint64_t;
+        [[nodiscard]] inline auto get_usage() -> BufferUsageFlags;
+        [[nodiscard]] inline auto map_async(
             MapModeFlags mode,
             size_t offset,
             size_t size,
             BufferMapCallback&& callback
         ) -> std::unique_ptr<BufferMapCallback>;
-        auto unmap() -> void;
+        inline auto unmap() -> void;
     END
 
     HANDLE(CommandBuffer)
-        auto label(CStr label) -> void;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(CommandEncoder)
-        auto begin_compute_pass(const ComputePassDescriptor& descriptor) -> ComputePassEncoder;
-        auto begin_render_pass(const RenderPassDescriptor& descriptor) -> RenderPassEncoder;
-        auto clear_buffer(Buffer buffer, uint64_t offset, uint64_t size) -> void;
-        auto copy_buffer_to_buffer(
-            Buffer src,
+        [[nodiscard]] inline auto begin_compute_pass(const ComputePassDescriptor& descriptor) -> ComputePassEncoder;
+        [[nodiscard]] inline auto begin_render_pass(const RenderPassDescriptor& descriptor) -> RenderPassEncoder;
+        inline auto clear_buffer(Buffer& buffer, uint64_t offset, uint64_t size) -> void;
+        inline auto copy_buffer_to_buffer(
+            const Buffer& src,
             uint64_t src_offset,
-            Buffer dest,
+            Buffer& dest,
             uint64_t dest_offset,
             uint64_t size
         ) -> void;
-        auto copy_buffer_to_texture(
+        inline auto copy_buffer_to_texture(
             const ImageCopyBuffer& src,
-            const ImageCopyTexture& dest,
+            ImageCopyTexture& dest,
             const Extent3D& size
         ) -> void;
-        auto copy_texture_to_buffer(
+        inline auto copy_texture_to_buffer(
             const ImageCopyTexture& src,
-            const ImageCopyBuffer& dest,
+            ImageCopyBuffer& dest,
             const Extent3D& size
         ) -> void;
-        auto finish(const CommandBufferDescriptor& descriptor) -> CommandBuffer;
-        auto insert_debug_marker(CStr label) -> void;
-        auto pop_debug_group() -> void;
-        auto push_debug_group(CStr label) -> void;
-        auto resolve_query_set(
-            QuerySet query_set,
+        inline auto copy_texture_to_texture(
+            const ImageCopyTexture& src,
+            ImageCopyTexture& dest,
+            const Extent3D& size
+        ) -> void;
+        [[nodiscard]] inline auto finish(const CommandBufferDescriptor& descriptor) -> CommandBuffer;
+        inline auto insert_debug_marker(CStr marker_label) -> void;
+        inline auto pop_debug_group() -> void;
+        inline auto push_debug_group(CStr group_label) -> void;
+        inline auto resolve_query_set(
+            const QuerySet& query_set,
             uint32_t first_query,
             uint32_t query_count,
-            Buffer dest,
+            Buffer& dest,
             uint64_t dest_offset
         ) -> void;
-        auto label(CStr label) -> void;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(ComputePassEncoder)
-        auto begin_pipeline_statistics_query(QuerySet query_set, uint32_t query_idx) -> void;
-        auto dispatch_workgroups(
+        inline auto begin_pipeline_statistics_query(const QuerySet& query_set, uint32_t query_idx) -> void;
+        inline auto dispatch_workgroups(
             uint32_t workgroup_count_x,
             uint32_t workgroup_count_y,
             uint32_t workgroup_count_z
         ) -> void;
-        auto dispatch_workgroups_indirect(Buffer indirect_buffer, uint64_t indirect_offset) -> void;
-        auto end() -> void;
-        auto end_pipeline_statistics_query() -> void;
-        auto insert_debug_marker(CStr label) -> void;
-        auto pop_debug_group() -> void;
-        auto push_debug_group(CStr label) -> void;
-        auto set_bind_group(
+        inline auto dispatch_workgroups_indirect(Buffer& indirect_buffer, uint64_t indirect_offset) -> void;
+        inline auto end() -> void;
+        inline auto end_pipeline_statistics_query() -> void;
+        inline auto insert_debug_marker(CStr marker_label) -> void;
+        inline auto pop_debug_group() -> void;
+        inline auto push_debug_group(CStr group_label) -> void;
+        inline auto set_bind_group(
             uint32_t group_idx,
-            BindGroup group,
-            uint32_t dynamic_offset_count,
+            BindGroup& group,
+            size_t dynamic_offset_count,
             uint32_t const* dynamic_offsets
         ) -> void;
-        auto set_bind_group(
-            uint32_t group_idx,
-            BindGroup group,
-            const std::vector<uint32_t>& dynamic_offsets
-        ) -> void;
-        auto set_bind_group(
-            uint32_t group_idx,
-            BindGroup group,
-            const uint32_t& dynamic_offsets
-        ) -> void;
-        auto label(CStr label) -> void;
-        auto set_pipeline(ComputePipeline pipeline) -> void;
+        inline auto label(CStr label) -> void;
+        inline auto set_pipeline(ComputePipeline& pipeline) -> void;
     END
 
     HANDLE(ComputePipeline)
-        auto get_bind_group_layout(uint32_t group_idx) -> void;
-        auto label(CStr label) -> void;
+        [[nodiscard]] inline auto get_bind_group_layout(uint32_t group_idx) -> BindGroupLayout;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(Device)
-        auto create_bind_group(const BindGroupDescriptor& desc) -> BindGroup;
-        auto create_bind_group_layout(const BindGroupLayoutDescriptor& desc) -> BindGroupLayout;
-        auto create_buffer(const BufferDescriptor& desc) -> Buffer;
-        auto create_command_encoder(const CommandEncoderDescriptor& desc) -> CommandEncoder;
-        auto create_compute_pipeline(const ComputePipelineDescriptor& desc) -> ComputePipeline;
-        auto create_compute_pipeline_async(
+        [[nodiscard]] inline auto create_bind_group(const BindGroupDescriptor& desc) -> BindGroup;
+        [[nodiscard]] inline auto create_bind_group_layout(const BindGroupLayoutDescriptor& desc) -> BindGroupLayout;
+        [[nodiscard]] inline auto create_buffer(const BufferDescriptor& desc) -> Buffer;
+        [[nodiscard]] inline auto create_command_encoder(const CommandEncoderDescriptor& desc) -> CommandEncoder;
+        [[nodiscard]] inline auto create_compute_pipeline(const ComputePipelineDescriptor& desc) -> ComputePipeline;
+        [[nodiscard]] inline auto create_compute_pipeline_async(
             const ComputePipelineDescriptor& desc,
             CreateComputePipelineAsyncCallback&& callback
         ) -> std::unique_ptr<CreateComputePipelineAsyncCallback>;
-        auto create_pipeline_layout(const PipelineLayoutDescriptor& desc) -> PipelineLayout;
-        auto create_query_set(const QuerySetDescriptor& desc) -> QuerySet;
-        auto create_render_bundle_encoder(const RenderBundleEncoderDescriptor& desc) -> RenderBundleEncoder;
-        auto create_render_pipeline(const RenderPipelineDescriptor& desc) -> RenderPipeline;
-        auto create_render_pipeline_async(
+        [[nodiscard]] inline auto create_pipeline_layout(const PipelineLayoutDescriptor& desc) -> PipelineLayout;
+        [[nodiscard]] inline auto create_query_set(const QuerySetDescriptor& desc) -> QuerySet;
+        [[nodiscard]] inline auto create_render_bundle_encoder(const RenderBundleEncoderDescriptor& desc) -> RenderBundleEncoder;
+        [[nodiscard]] inline auto create_render_pipeline(const RenderPipelineDescriptor& desc) -> RenderPipeline;
+        [[nodiscard]] inline auto create_render_pipeline_async(
             const RenderPipelineDescriptor& desc,
             CreateRenderPipelineAsyncCallback&& callback
         ) -> std::unique_ptr<CreateRenderPipelineAsyncCallback>;
-        auto create_sampler(const SamplerDescriptor& desc) -> Sampler;
-        auto create_shader_module(const ShaderModuleDescriptor& desc) -> ShaderModule;
-        auto create_swapchain(Surface surface, const SwapChainDescriptor& desc) -> SwapChain;
-        auto create_texture(const TextureDescriptor& desc) -> Texture;
-        auto destroy() -> void;
-        auto enumerate_features(FeatureName* features) -> size_t;
-        auto get_limits(SupportedLimits* limits) -> bool;
-        auto get_queue() -> Queue;
-        auto has_feature(FeatureName feature) -> bool;
-        auto pop_error_scope(ErrorCallback&& callback) -> std::unique_ptr<ErrorCallback>;
+        [[nodiscard]] inline auto create_sampler(const SamplerDescriptor& desc) -> Sampler;
+        [[nodiscard]] inline auto create_shader_module(const ShaderModuleDescriptor& desc) -> ShaderModule;
+        [[nodiscard]] inline auto create_swapchain(Surface& surface, const SwapChainDescriptor& desc) -> SwapChain;
+        [[nodiscard]] inline auto create_texture(const TextureDescriptor& desc) -> Texture;
+        inline auto destroy() -> void;
+        [[nodiscard]] inline auto enumerate_features(FeatureName* features) -> size_t;
+        inline auto get_limits(SupportedLimits* limits) -> bool;
+        [[nodiscard]] inline auto get_queue() -> Queue;
+        [[nodiscard]] inline auto has_feature(FeatureName feature) -> bool;
+        [[nodiscard]] inline auto pop_error_scope(ErrorCallback&& callback) -> std::unique_ptr<ErrorCallback>;
+        inline auto push_error_scope(ErrorFilter filter) -> void;
+        inline auto label(CStr label) -> void;
+        [[nodiscard]] inline auto set_uncaptured_error_callback(ErrorCallback&&) -> std::unique_ptr<ErrorCallback>;
     END 
 
     HANDLE(Instance)
-        static inline auto init(const InstanceDescriptor& desc) -> Instance;
-        inline auto deinit() -> void;
-        inline auto create_surface(GLFWwindow* window) -> Surface;
-        auto process_events() -> void;
-        auto request_adapter(const RequestAdapterOptions& opts) -> Adapter;
+        [[nodiscard]] static inline auto init(const InstanceDescriptor& desc) -> Instance;
+        [[nodiscard]] static inline auto init() -> Instance;
+        [[nodiscard]] inline auto create_surface(const SurfaceDescriptor& desc) -> Surface;
+        [[nodiscard]] inline auto request_adapter(const RequestAdapterOptions& opts) -> Adapter;
+        inline auto process_events() -> void;
     END
 
     HANDLE(PipelineLayout)
-        auto label(CStr label) -> void;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(QuerySet)
-        auto destroy() -> void;
-        auto get_count() -> uint32_t;
-        auto get_type() -> QueryType;
-        auto label(CStr label) -> void;
+        inline auto destroy() -> void;
+        [[nodiscard]] inline auto get_count() -> uint32_t;
+        [[nodiscard]] inline auto get_type() -> QueryType;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(Queue)
-        auto on_submitted_work_done(QueueWorkDoneCallback&& callback) -> std::unique_ptr<QueueWorkDoneCallback>;
-        auto label(CStr label) -> void;
-        auto submit(uint32_t command_count, CommandBuffer const* commands) -> void;
-        auto submit(const std::vector<CommandBuffer>& commands) -> void;
-        auto submit(const CommandBuffer& commands) -> void;
-        auto write_texture(
-            Buffer buffer,
+        [[nodiscard]] inline auto on_submitted_work_done(QueueWorkDoneCallback&& callback) -> std::unique_ptr<QueueWorkDoneCallback>;
+        inline auto label(CStr label) -> void;
+        inline auto submit(size_t command_count, CommandBuffer const* commands) -> void;
+        inline auto write_buffer(
+            Buffer& buffer,
             uint64_t buffer_offset,
             void const* data,
             size_t size
         ) -> void;
-        auto write_texture(
-            const ImageCopyTexture& dest,
+        inline auto write_texture(
+            ImageCopyTexture& dest,
             void const* data,
             size_t data_size,
             const TextureDataLayout& data_layout,
@@ -1574,121 +2523,100 @@ namespace wgpu {
     END
 
     HANDLE(RenderBundleEncoder)
-        auto draw(
+        inline auto draw(
             uint32_t vertex_count,
             uint32_t instance_count,
             uint32_t first_vertex,
             uint32_t first_instance
         ) -> void;
-        auto draw_indexed(
+        inline auto draw_indexed(
            uint32_t index_count, 
            uint32_t instance_count,
            uint32_t first_index,
            int32_t base_vertex,
-           uint32_t first_instance
+           int32_t first_instance
         ) -> void;
-        auto draw_indexed_indirect(Buffer indirect_buffer, uint64_t indirect_offset) -> void;
-        auto draw_indirect(Buffer indirect_buffer, uint64_t indirect_offset) -> void;
-        auto finish(const RenderBundleDescriptor& desc) -> RenderBundle;
-        auto insert_debug_marker(CStr label) -> void;
-        auto pop_debug_group() -> void;
-        auto push_debug_group(CStr label) -> void;
-        auto set_bind_group(
+        inline auto draw_indexed_indirect(Buffer& indirect_buffer, uint64_t indirect_offset) -> void;
+        inline auto draw_indirect(Buffer& indirect_buffer, uint64_t indirect_offset) -> void;
+        [[nodiscard]] inline auto finish(const RenderBundleEncoderDescriptor& desc) -> RenderBundle;
+        inline auto insert_debug_marker(CStr marker_label) -> void;
+        inline auto pop_debug_group() -> void;
+        inline auto push_debug_group(CStr group_label) -> void;
+        inline auto set_bind_group(
             uint32_t group_idx,
-            BindGroup group,
-            uint32_t dynamic_offset_count,
+            BindGroup& group,
+            size_t dynamic_offset_count,
             uint32_t const* dynamic_offsets
         ) -> void;
-        auto set_bind_group(
-            uint32_t group_idx,
-            BindGroup group,
-            const std::vector<uint32_t>& dynamic_offsets
-        ) -> void;
-        auto set_bind_group(
-            uint32_t group_idx,
-            BindGroup group,
-            const uint32_t& dynamic_offsets
-        ) -> void;
-        auto set_index_buffer(
-            Buffer buffer,
+        inline auto set_index_buffer(
+            Buffer& buffer,
             IndexFormat format,
             uint64_t offset,
             uint64_t size
         ) -> void;
-        auto label(CStr label) -> void;
-        auto set_pipeline(RenderPipeline pipeline) -> void;
-        auto set_vertex_buffer(
+        inline auto label(CStr label) -> void;
+        inline auto set_pipeline(RenderPipeline& pipeline) -> void;
+        inline auto set_vertex_buffer(
             uint32_t slot,
-            Buffer buffer,
+            Buffer& buffer,
             uint64_t offset, uint64_t size
         ) -> void;
     END
 
     HANDLE(RenderPassEncoder)
-        auto begin_occlusion_query(uint32_t query_idx) -> void;
-        auto begin_pipeline_statistics_query(QuerySet query_set, uint32_t query_idx) -> void;
-        auto draw(
+        inline auto begin_occlusion_query(uint32_t query_idx) -> void;
+        inline auto begin_pipeline_statistics_query(QuerySet& query_set, uint32_t query_idx) -> void;
+        inline auto draw(
             uint32_t vertex_count,
             uint32_t instance_count,
             uint32_t first_vertex,
             uint32_t first_instance
         ) -> void;
-        auto draw_indexed(
+        inline auto draw_indexed(
             uint32_t index_count,
             uint32_t instance_count,
             uint32_t first_index,
             int32_t base_vertex,
             uint32_t first_instance 
         ) -> void;
-        auto draw_indexed_indirect(Buffer indirect_buffer, uint64_t indirect_offset) -> void;
-        auto draw_indirect(Buffer indirect_buffer, uint64_t indirect_offset) -> void;
-        auto end() -> void;
-        auto end_occluion_query() -> void; 
-        auto execute_bundles(uint32_t bundle_count, RenderBundle const* bundles) -> void;
-        auto execute_bundles(const std::vector<RenderBundle>& bundles) -> void;
-        auto execute_bundles(const RenderBundle& bundles) -> void;
-        auto insert_debug_marker(CStr label) -> void;
-        auto pop_debug_group() -> void;
-        auto push_debug_group(CStr label) -> void;
-        auto set_bind_group(
+        inline auto draw_indexed_indirect(Buffer& indirect_buffer, uint64_t indirect_offset) -> void;
+        inline auto draw_indirect(Buffer& indirect_buffer, uint64_t indirect_offset) -> void;
+        inline auto end() -> void;
+        inline auto end_occluion_query() -> void; 
+        inline auto end_pipeline_statistics_query() -> void;
+        inline auto execute_bundles(size_t bundle_count, RenderBundle const* bundles) -> void;
+        inline auto insert_debug_marker(CStr marker_label) -> void;
+        inline auto pop_debug_group() -> void;
+        inline auto push_debug_group(CStr group_label) -> void;
+        inline auto set_bind_group(
             uint32_t group_idx,
-            BindGroup group,
-            uint32_t dynamic_offset_count,
+            BindGroup& group,
+            size_t dynamic_offset_count,
             uint32_t const* dynamic_offsets
         ) -> void;
-        auto set_bind_group(
-            uint32_t group_idx,
-            BindGroup group,
-            const std::vector<uint32_t>& dynamic_offsets
-        ) -> void;
-        auto set_bind_group(
-            uint32_t group_idx,
-            BindGroup group,
-            const uint32_t& dynamic_offsets
-        ) -> void;
-        auto set_blend_constant(const Color& color) -> void;
-        auto set_index_buffer(
-            Buffer buffer,
+        inline auto set_blend_constant(const Color& color) -> void;
+        inline auto set_index_buffer(
+            Buffer& buffer,
             IndexFormat format,
             uint64_t offset,
             uint64_t size
         ) -> void;
-        auto label(CStr label) -> void;
-        auto set_pipeline(RenderPipeline pipeline) -> void;
-        auto set_scissor_rect(
+        inline auto label(CStr label) -> void;
+        inline auto set_pipeline(RenderPipeline& pipeline) -> void;
+        inline auto set_scissor_rect(
             uint32_t x,
             uint32_t y,
             uint32_t width,
             uint32_t height
         ) -> void;
-        auto set_stencil_reference(uint32_t reference) -> void;
-        auto set_vertex_buffer(
+        inline auto set_stencil_reference(uint32_t reference) -> void;
+        inline auto set_vertex_buffer(
             uint32_t slot,
-            Buffer buffer,
+            Buffer& buffer,
             uint64_t offset,
             uint64_t size
         ) -> void;
-        auto set_viewport(
+        inline auto set_viewport(
             float x,
             float y,
             float width,
@@ -1699,55 +2627,398 @@ namespace wgpu {
     END
 
     HANDLE(RenderPipeline)
-        auto get_bind_group_layout(uint32_t group_idx) -> BindGroupLayout;
-        auto label(CStr label) -> void;
+        [[nodiscard]] inline auto get_bind_group_layout(uint32_t group_idx) -> BindGroupLayout;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(Sampler)
-        auto label(CStr label) -> void;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(ShaderModule)
-        auto get_compilation_info(CompilationInfoCallback&& callback) -> std::unique_ptr<CompilationInfoCallback>;
-        auto label(CStr label) -> void;
+        [[nodiscard]] inline auto get_compilation_info(CompilationInfoCallback&& callback) -> std::unique_ptr<CompilationInfoCallback>;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(Surface)
-        auto get_preferred_format(Adapter adapter) -> TextureFormat;
+        [[nodiscard]] inline auto get_preferred_format(Adapter& adapter) -> TextureFormat;
     END
 
     HANDLE(SwapChain)
-        auto get_current_texture_view() -> TextureView;
+        [[nodiscard]] inline auto get_current_texture_view() -> TextureView;
+        inline auto present() -> void;
     END
 
     HANDLE(Texture)
-        auto create_view(const TextureViewDescriptor& desc) -> TextureView;
-        auto destroy() -> void;
-        auto get_depth_or_array_layers() -> uint32_t;
-        auto get_dimension() -> TextureDimension;
-        auto get_format() -> TextureFormat;
-        auto get_height() -> uint32_t;
-        auto get_mip_level_count() -> uint32_t;
-        auto get_sample_count() -> uint32_t;
-        auto get_usage() -> TextureUsage;
-        auto get_width() -> uint32_t;
-        auto label(CStr label) -> void;
+        [[nodiscard]] inline auto create_view(const TextureViewDescriptor& desc) -> TextureView;
+        inline auto destroy() -> void;
+        [[nodiscard]] inline auto get_depth_or_array_layers() -> uint32_t;
+        [[nodiscard]] inline auto get_dimension() -> TextureDimension;
+        [[nodiscard]] inline auto get_format() -> TextureFormat;
+        [[nodiscard]] inline auto get_height() -> uint32_t;
+        [[nodiscard]] inline auto get_mip_level_count() -> uint32_t;
+        [[nodiscard]] inline auto get_sample_count() -> uint32_t;
+        [[nodiscard]] inline auto get_usage() -> TextureUsageFlags;
+        [[nodiscard]] inline auto get_width() -> uint32_t;
+        inline auto label(CStr label) -> void;
     END
 
     HANDLE(TextureView)
-        auto label(CStr label) -> void;
+        inline auto label(CStr label) -> void;
     END
 
-    inline auto Instance::init(const InstanceDescriptor& desc) -> Instance {
-        return { .inner = wgpuCreateInstance(&desc) };    
+    // Adapter Methods
+    
+    auto Adapter::enumerate_features(FeatureName* features) -> size_t {
+        return native::wgpuAdapterEnumerateFeatures(*this, features);
     }
 
-    inline auto Instance::deinit() -> void {
-        wgpuInstanceRelease(this->inner);
+    auto Adapter::get_limits(SupportedLimits* limits) -> bool {
+        return native::wgpuAdapterGetLimits(*this, limits);
     }
 
-    inline auto Instance::create_surface(GLFWwindow* window) -> Surface {
-        return *reinterpret_cast<Surface*>(glfwGetWGPUSurface(this->inner, window));
+    auto Adapter::get_properties(AdapterProperties* props) -> void {
+        return native::wgpuAdapterGetProperties(*this, props);
+    }
+
+    auto Adapter::has_feature(FeatureName feature) -> bool {
+        return native::wgpuAdapterHasFeature(*this, feature);
+    }
+
+    auto Adapter::request_device(
+        const DeviceDescriptor&  desc,
+        RequestDeviceCallback&& callback
+    ) -> std::unique_ptr<RequestDeviceCallback> {
+        std::cerr << "TODO: Unimplemented" << std::endl;
+        std::abort();
+    }
+
+    // BindGroup Methods
+    auto BindGroup::label(CStr label) -> void {
+        return native::wgpuBindGroupSetLabel(*this, label);
+    }
+
+    // BindGroupLayoutMethods
+    
+    auto BindGroupLayout::label(CStr label) -> void {
+        return native::wgpuBindGroupLayoutSetLabel(*this, label);
+    }
+
+    // Buffer Methods
+    
+    auto Buffer::label(CStr label) -> void {
+        return native::wgpuBufferSetLabel(*this, label);
+    }
+
+    auto Buffer::destroy() -> void {
+        return native::wgpuBufferDestroy(*this);
+    }
+
+    auto Buffer::get_const_mapped_range(size_t offset, size_t size) -> void const* {
+        return native::wgpuBufferGetConstMappedRange(*this, offset, size);
+    }
+
+    auto Buffer::get_map_state() -> BufferMapState {
+        return native::wgpuBufferGetMapState(*this);
+    }
+
+    auto Buffer::get_size() -> uint64_t {
+        return native::wgpuBufferGetSize(*this);
+    }
+
+    auto Buffer::get_usage() -> BufferUsageFlags {
+        return native::wgpuBufferGetUsage(*this);
+    }
+
+    auto Buffer::map_async(
+        MapModeFlags mode,
+        size_t offset,
+        size_t size,
+        BufferMapCallback&& callback
+    ) -> std::unique_ptr<BufferMapCallback> {
+        std::cerr << "TODO: Unimplemented" << std::endl;
+        std::abort();
+    }
+
+    auto Buffer::unmap() -> void {
+        return native::wgpuBufferUnmap(*this);
+    }
+
+    // CommandBuffer Methods
+
+    auto CommandBuffer::label(CStr label) -> void {
+        return native::wgpuCommandBufferSetLabel(*this, label);
+    }
+
+    // CommandEncoder Methods
+
+    auto CommandEncoder::begin_compute_pass(const ComputePassDescriptor& desc) -> ComputePassEncoder {
+        return { native::wgpuCommandEncoderBeginComputePass(*this, &desc) };
+    }
+
+    auto CommandEncoder::begin_render_pass(const RenderPassDescriptor& desc) -> RenderPassEncoder {
+        return { native::wgpuCommandEncoderBeginRenderPass(*this, &desc) };
+    }
+
+    auto CommandEncoder::clear_buffer(Buffer& buffer, uint64_t offset, uint64_t size) -> void {
+        return native::wgpuCommandEncoderClearBuffer(*this, buffer, offset, size);
+    }
+
+    auto CommandEncoder::copy_buffer_to_buffer(
+        const Buffer& src,
+        uint64_t src_offset,
+        Buffer& dest,
+        uint64_t dest_offset,
+        uint64_t size
+    ) -> void {
+        return native::wgpuCommandEncoderCopyBufferToBuffer(*this, src, src_offset, dest, dest_offset, size);
+    }
+
+    auto CommandEncoder::copy_buffer_to_texture(
+        const ImageCopyBuffer& src,
+        ImageCopyTexture& dest,
+        const Extent3D& size
+    ) -> void {
+        return native::wgpuCommandEncoderCopyBufferToTexture(*this, &src, &dest, &size);
+    }
+
+    auto CommandEncoder::copy_texture_to_buffer(
+        const ImageCopyTexture& src,
+        ImageCopyBuffer& dest,
+        const Extent3D& size
+    ) -> void {
+        return native::wgpuCommandEncoderCopyTextureToBuffer(*this, &src, &dest, &size);
+    }
+
+    auto CommandEncoder::copy_texture_to_texture(
+        const ImageCopyTexture& src,
+        ImageCopyTexture& dest,
+        const Extent3D& size
+    ) -> void {
+        return native::wgpuCommandEncoderCopyTextureToTexture(*this, &src, &dest, &size);
+    }
+
+    auto CommandEncoder::finish(const CommandBufferDescriptor& desc) -> CommandBuffer {
+        return { native::wgpuCommandEncoderFinish(*this, &desc) };
+    }
+
+    auto CommandEncoder::insert_debug_marker(CStr marker_label) -> void {
+        return native::wgpuCommandEncoderInsertDebugMarker(*this, marker_label);
+    }
+
+    auto CommandEncoder::pop_debug_group() -> void {
+        return native::wgpuCommandEncoderPopDebugGroup(*this);
+    }
+
+    auto CommandEncoder::push_debug_group(CStr group_label) -> void {
+        return native::wgpuCommandEncoderPushDebugGroup(*this, group_label);
+    }
+
+    auto CommandEncoder::resolve_query_set(
+        const QuerySet& query_set,
+        uint32_t first_query,
+        uint32_t query_count,
+        Buffer& dest,
+        uint64_t dest_offset
+    ) -> void {
+        return native::wgpuCommandEncoderResolveQuerySet(*this, query_set, first_query, query_count, dest, dest_offset);
+    }
+
+    auto CommandEncoder::label(CStr label) -> void {
+       return native::wgpuCommandEncoderSetLabel(*this, label); 
+    }
+
+    // ComputePassEncoder Methods
+
+    auto ComputePassEncoder::begin_pipeline_statistics_query(const QuerySet& query_set, uint32_t query_idx) -> void {
+        return native::wgpuComputePassEncoderBeginPipelineStatisticsQuery(*this, query_set, query_idx);
+    }
+
+    auto ComputePassEncoder::dispatch_workgroups(
+        uint32_t workgroup_count_x,
+        uint32_t workgroup_count_y,
+        uint32_t workgroup_count_z
+    ) -> void {
+        return native::wgpuComputePassEncoderDispatchWorkgroups(*this, workgroup_count_x, workgroup_count_y, workgroup_count_z);
+    }
+
+    auto ComputePassEncoder::dispatch_workgroups_indirect(
+       Buffer& indirect_buffer,
+       uint64_t indirect_offset
+    ) -> void {
+        return native::wgpuComputePassEncoderDispatchWorkgroupsIndirect(*this, indirect_buffer, indirect_offset);
+    }
+
+    auto ComputePassEncoder::end() -> void {
+        return native::wgpuComputePassEncoderEnd(*this);
+    }
+
+    auto ComputePassEncoder::insert_debug_marker(CStr marker_label) -> void {
+        return native::wgpuComputePassEncoderInsertDebugMarker(*this, marker_label);
+    }
+
+    auto ComputePassEncoder::pop_debug_group() -> void {
+        return native::wgpuComputePassEncoderPopDebugGroup(*this);
+    }
+
+    auto ComputePassEncoder::push_debug_group(CStr group_label) -> void {
+        return native::wgpuComputePassEncoderPushDebugGroup(*this, group_label);
+    }
+
+    auto ComputePassEncoder::set_bind_group(
+        uint32_t group_idx,
+        BindGroup& bind_group,
+        size_t dynamic_offset_count,
+        uint32_t const* dynamic_offsets
+    ) -> void {
+        return native::wgpuComputePassEncoderSetBindGroup(
+            *this,
+            group_idx,
+            bind_group,
+            dynamic_offset_count,
+            dynamic_offsets
+        );
+    }
+
+    auto ComputePassEncoder::label(CStr label) -> void {
+        return native::wgpuComputePassEncoderSetLabel(*this, label);
+    }
+
+    auto ComputePassEncoder::set_pipeline(ComputePipeline& pipeline) -> void {
+        return native::wgpuComputePassEncoderSetPipeline(*this, pipeline);
+    }
+
+    // ComputePipeline Methods
+    
+    auto ComputePipeline::get_bind_group_layout(uint32_t group_idx) -> BindGroupLayout {
+        return { native::wgpuComputePipelineGetBindGroupLayout(*this, group_idx) };
+    }
+
+    auto ComputePipeline::label(CStr label) -> void {
+        return native::wgpuComputePipelineSetLabel(*this, label);
+    }
+
+    // Device Methods
+
+    auto Device::create_bind_group(const BindGroupDescriptor& desc) -> BindGroup {
+        return { native::wgpuDeviceCreateBindGroup(*this, &desc) };
+    }
+
+    auto Device::create_bind_group_layout(const BindGroupLayoutDescriptor& desc) -> BindGroupLayout {
+        return { native::wgpuDeviceCreateBindGroupLayout(*this, &desc) };
+    }
+
+    auto Device::create_buffer(const BufferDescriptor& desc) -> Buffer {
+        return { native::wgpuDeviceCreateBuffer(*this, &desc) };
+    } 
+
+    auto Device::create_command_encoder(const CommandEncoderDescriptor& desc) -> CommandEncoder {
+        return { native::wgpuDeviceCreateCommandEncoder(*this, &desc) };
+    }
+
+    auto Device::create_compute_pipeline(const ComputePipelineDescriptor& desc) -> ComputePipeline {
+        return { native::wgpuDeviceCreateComputePipeline(*this, &desc) };
+    }
+
+    auto Device::create_compute_pipeline_async(
+        const ComputePipelineDescriptor& desc, 
+        CreateComputePipelineAsyncCallback&& callback
+    ) -> std::unique_ptr<CreateComputePipelineAsyncCallback> {
+        std::cerr << "TODO: Unimplemented" << std::endl;
+        std::abort();
+    }
+
+    auto Device::create_pipeline_layout(const PipelineLayoutDescriptor& desc) -> PipelineLayout {
+        return { native::wgpuDeviceCreatePipelineLayout(*this, &desc) };
+    }
+
+    auto Device::create_query_set(const QuerySetDescriptor& desc) -> QuerySet {
+        return { native::wgpuDeviceCreateQuerySet(*this, &desc) };
+    }
+
+    auto Device::create_render_bundle_encoder(const RenderBundleEncoderDescriptor& desc) -> RenderBundleEncoder {
+        return { native::wgpuDeviceCreateRenderBundleEncoder(*this, &desc) };
+    }
+
+    auto Device::create_render_pipeline(const RenderPipelineDescriptor& desc) -> RenderPipeline {
+        return { native::wgpuDeviceCreateRenderPipeline(*this, &desc) };
+    }
+
+    auto Device::create_render_pipeline_async(
+        const RenderPipelineDescriptor& desc,
+        CreateRenderPipelineAsyncCallback&& callback
+    ) -> std::unique_ptr<CreateRenderPipelineAsyncCallback> {
+        std::cerr << "TODO: Unimplemented" << std::endl;
+        std::abort();
+    }
+
+    auto Device::create_sampler(const SamplerDescriptor& desc) -> Sampler {
+        return { native::wgpuDeviceCreateSampler(*this, &desc) };
+    }
+
+    auto Device::create_shader_module(const ShaderModuleDescriptor& desc) -> ShaderModule {
+        return { native::wgpuDeviceCreateShaderModule(*this, &desc) };
+    }
+
+    auto Device::create_swapchain(Surface& surface, const SwapChainDescriptor& desc) -> SwapChain {
+        return { native::wgpuDeviceCreateSwapChain(*this, surface, &desc) };
+    }
+
+    auto Device::create_texture(const TextureDescriptor& desc) -> Texture {
+        return { native::wgpuDeviceCreateTexture(*this, &desc) };
+    }
+
+    auto Device::destroy() -> void {
+        return native::wgpuDeviceDestroy(*this);
+    }
+
+    auto Device::enumerate_features(FeatureName* features) -> size_t {
+        return native::wgpuDeviceEnumerateFeatures(*this, features);
+    }
+
+    auto Device::get_limits(SupportedLimits* limits) -> bool {
+        return native::wgpuDeviceGetLimits(*this, limits);
+    }
+
+    auto Device::get_queue() -> Queue {
+        return { native::wgpuDeviceGetQueue(*this) };
+    }
+
+    auto Device::has_feature(FeatureName feature) -> bool {
+        return native::wgpuDeviceHasFeature(*this, feature);
+    }
+
+    auto Device::pop_error_scope(ErrorCallback&& callback) -> std::unique_ptr<ErrorCallback> {
+        std::cerr << "TODO: Unimplemented" << std::endl;
+        std::abort();
+    }
+
+    auto Device::push_error_scope(ErrorFilter filter) -> void {
+        return native::wgpuDevicePushErrorScope(*this, filter);
+    }
+
+    auto Device::label(CStr label) -> void {
+        return native::wgpuDeviceSetLabel(*this, label);
+    }
+
+    auto Device::set_uncaptured_error_callback(ErrorCallback&& callback) -> std::unique_ptr<ErrorCallback> {
+        std::cerr << "TODO: Unimplemented" << std::endl;
+        std::abort();
+    }
+
+    // Instance Methods
+
+    auto Instance::init(const InstanceDescriptor& desc) -> Instance {
+        return { native::wgpuCreateInstance(&desc) };    
+    }
+
+    auto Instance::init() -> Instance {
+        const auto desc = InstanceDescriptor{};
+        return { native::wgpuCreateInstance(&desc) };
+    }
+
+    auto Instance::create_surface(const SurfaceDescriptor& desc) -> Surface {
+        return { native::wgpuInstanceCreateSurface(*this, &desc) } ;
     }
 
     auto Instance::request_adapter(const RequestAdapterOptions& opts) -> Adapter {
@@ -1756,32 +3027,487 @@ namespace wgpu {
             bool request_ended {};
         };
 
-        auto callback = [](
-            RequestAdapterStatus status,
-            impl::Adapter adapter,
-            CStr msg,
-            void* user_data_ptr
-        ) -> void {
-            auto& user_data = *reinterpret_cast<UserData*>(user_data_ptr);
-            switch (status) {
-                case RequestAdapterStatus::Success: {
-                    user_data.adapter = adapter;
-                    break;
-                }
-                case RequestAdapterStatus::Unavailable: [[fallthrough]];
-                case RequestAdapterStatus::Unknown: [[fallthrough]];
-                case RequestAdapterStatus::Error: {
-                    std::cerr << "Failed to request adapter: " << msg << std::endl;
-                    std::abort();
-                }
+        auto callback = [](wgpu::RequestAdapterStatus status, wgpu::impl::Adapter adapter, CStr msg, void* user_data_raw) {
+            auto& user_data = *reinterpret_cast<UserData*>(user_data_raw);
+            if (status == wgpu::RequestAdapterStatus::Success) {
+                user_data.adapter = adapter;
+            } else {
+                std::cerr << "Couldn't request WebGPU Adapter: " << msg << std::endl;
             }
+            user_data.request_ended = true;
         };
 
         auto user_data = UserData{};
-        wgpuInstanceRequestAdapter(this->inner, &opts, callback, (void*)&user_data);
-        
-        const auto [adapter, request_ended] = user_data;
-        assert(request_ended);
-        return { .inner = adapter };
+        native::wgpuInstanceRequestAdapter(
+            *this,
+            &opts,
+            callback,
+            (void*)&user_data
+        );
+    
+        const auto [adapter, ended] = user_data;
+        if (!ended) {
+            std::cerr << "Adapter Request Incomplete" << std::endl;
+            std::abort();
+        }
+
+        return { adapter };
     }
+
+    // PipelineLayout Methods
+    
+    auto PipelineLayout::label(CStr label) -> void {
+        return native::wgpuPipelineLayoutSetLabel(*this, label);
+    }
+
+    // QuerySet Methods
+
+    auto QuerySet::destroy() -> void {
+        return native::wgpuQuerySetDestroy(*this);
+    }
+
+    auto QuerySet::get_count() -> uint32_t {
+        return native::wgpuQuerySetGetCount(*this);
+    }
+
+    auto QuerySet::get_type() -> QueryType {
+        return native::wgpuQuerySetGetType(*this);
+    }
+
+    // Queue Methods
+
+    auto Queue::on_submitted_work_done(QueueWorkDoneCallback&& callback) -> std::unique_ptr<QueueWorkDoneCallback> {
+        std::cerr << "TODO: Unimplemented" << std::endl;
+        std::abort();
+    }
+
+    auto Queue::label(CStr label) -> void {
+        return native::wgpuQueueSetLabel(*this, label);
+    }
+
+    auto Queue::submit(size_t command_count, CommandBuffer const* commands) -> void { // TODO: Might be wrong
+        return native::wgpuQueueSubmit(*this, command_count, reinterpret_cast<impl::CommandBuffer const*>(commands));
+    }
+
+    auto Queue::write_buffer(
+        Buffer& buffer,
+        uint64_t offset,
+        void const* data,
+        size_t size
+    ) -> void {
+        return native::wgpuQueueWriteBuffer(
+            *this,
+            buffer,
+            offset,
+            data,
+            size
+        );
+    }
+
+    auto Queue::write_texture(
+        ImageCopyTexture& dest,
+        void const* data,
+        size_t data_size,
+        const TextureDataLayout& data_layout,
+        const Extent3D& write_size
+    ) -> void {
+        return native::wgpuQueueWriteTexture(
+            *this,
+            &dest,
+            data,
+            data_size,
+            &data_layout,
+            &write_size
+        );
+    }
+
+    // RenderBundle Methods
+    
+    auto RenderBundleEncoder::label(CStr label) -> void {
+        return native::wgpuRenderBundleEncoderSetLabel(*this, label);
+    }
+    
+    auto RenderBundleEncoder::draw(
+        uint32_t vertex_count,
+        uint32_t instance_count,
+        uint32_t first_vertex,
+        uint32_t first_instance
+    ) -> void {
+        return native::wgpuRenderBundleEncoderDraw(
+            *this,
+            vertex_count,
+            instance_count,
+            first_vertex,
+            first_instance
+        );
+    }
+
+    auto RenderBundleEncoder::draw_indexed(
+        uint32_t index_count,
+        uint32_t instance_count,
+        uint32_t first_index,
+        int32_t base_vertex,
+        int32_t first_instance
+    ) -> void {
+        return native::wgpuRenderBundleEncoderDrawIndexed(
+            *this,
+            index_count,
+            instance_count,
+            first_index,
+            base_vertex,
+            first_instance
+        );
+    }
+
+    auto RenderBundleEncoder::draw_indexed_indirect(
+        Buffer& indirect_buffer,
+        uint64_t indirect_offset
+    ) -> void {
+        return native::wgpuRenderBundleEncoderDrawIndexedIndirect(*this, indirect_buffer, indirect_offset);
+    }
+
+    auto RenderBundleEncoder::draw_indirect(
+        Buffer& indirect_buffer,
+        uint64_t indirect_offset
+    ) -> void {
+        return native::wgpuRenderBundleEncoderDrawIndirect(*this, indirect_buffer, indirect_offset);
+    }
+
+    auto RenderBundleEncoder::finish(const RenderBundleEncoderDescriptor& desc) -> RenderBundle {
+        return { native::wgpuRenderBundleEncoderFinish(*this, &desc) };
+    }
+
+    auto RenderBundleEncoder::insert_debug_marker(CStr marker_label) -> void {
+        return native::wgpuRenderBundleEncoderInsertDebugMarker(*this, marker_label);
+    }
+
+    auto RenderBundleEncoder::pop_debug_group() -> void {
+        return native::wgpuRenderBundleEncoderPopDebugGroup(*this);
+    }
+
+    auto RenderBundleEncoder::push_debug_group(CStr group_label) -> void {
+        return native::wgpuRenderBundleEncoderPushDebugGroup(*this, group_label); 
+    }
+
+    auto RenderBundleEncoder::set_bind_group(
+        uint32_t group_idx,
+        BindGroup& group,
+        size_t dynamic_offset_count,
+        uint32_t const* dynamic_offsets
+    ) -> void {
+        return native::wgpuRenderBundleEncoderSetBindGroup(
+            *this,
+            group_idx,
+            group,
+            dynamic_offset_count,
+            dynamic_offsets
+        );
+    }
+
+    auto RenderBundleEncoder::set_index_buffer(
+        Buffer& buffer,
+        IndexFormat format,
+        uint64_t offset,
+        uint64_t size
+    ) -> void {
+        return native::wgpuRenderBundleEncoderSetIndexBuffer(
+            *this,
+            buffer,
+            format,
+            offset,
+            size
+        );
+    }
+
+    auto RenderBundleEncoder::set_pipeline(RenderPipeline& render_pipeline) -> void {
+        return native::wgpuRenderBundleEncoderSetPipeline(*this, render_pipeline);
+    }
+
+    auto RenderBundleEncoder::set_vertex_buffer(
+        uint32_t slot,
+        Buffer& buffer,
+        uint64_t offset,
+        uint64_t size
+    ) -> void {
+        return native::wgpuRenderBundleEncoderSetVertexBuffer(
+            *this,
+            slot,
+            buffer,
+            offset,
+            size
+        );
+    }
+
+    // RenderPassEncoder Methods
+
+    auto RenderPassEncoder::begin_occlusion_query(uint32_t query_idx) -> void {
+        return native::wgpuRenderPassEncoderBeginOcclusionQuery(*this, query_idx);
+    }
+
+    auto RenderPassEncoder::begin_pipeline_statistics_query(QuerySet& query_set, uint32_t query_idx) -> void {
+        return native::wgpuRenderPassEncoderBeginPipelineStatisticsQuery(*this, query_set, query_idx);
+    }
+
+    auto RenderPassEncoder::draw(
+        uint32_t vertex_count,
+        uint32_t instance_count,
+        uint32_t first_vertex,
+        uint32_t first_instance
+    ) -> void {
+        return native::wgpuRenderPassEncoderDraw(
+            *this,
+            vertex_count,
+            instance_count,
+            first_vertex,
+            first_instance
+        );
+    }
+    
+    auto RenderPassEncoder::draw_indexed(
+        uint32_t index_count,
+        uint32_t instance_count,
+        uint32_t first_index,
+        int32_t base_vertex,
+        uint32_t first_instance
+    ) -> void {
+        return native::wgpuRenderPassEncoderDrawIndexed(
+            *this,
+            index_count,
+            instance_count,
+            first_index,
+            base_vertex,
+            first_instance
+        );
+    }
+
+    auto RenderPassEncoder::draw_indexed_indirect(
+        Buffer& indirect_buffer,
+        uint64_t indirect_offset
+    ) -> void {
+        return native::wgpuRenderPassEncoderDrawIndexedIndirect(
+            *this,
+            indirect_buffer,
+            indirect_offset
+        );
+    }
+
+    auto RenderPassEncoder::draw_indirect(
+        Buffer& indirect_buffer,
+        uint64_t indirect_offset
+    ) -> void {
+        return native::wgpuRenderPassEncoderDrawIndirect(
+            *this,
+            indirect_buffer,
+            indirect_offset
+        );
+    }
+
+    auto RenderPassEncoder::end() -> void {
+        return native::wgpuRenderPassEncoderEnd(*this);
+    }
+
+    auto RenderPassEncoder::end_occluion_query() -> void {
+        return native::wgpuRenderPassEncoderEndOcclusionQuery(*this);
+    }
+
+    auto RenderPassEncoder::end_pipeline_statistics_query() -> void {
+        return native::wgpuRenderPassEncoderEndPipelineStatisticsQuery(*this);
+    }
+
+    auto RenderPassEncoder::execute_bundles(size_t bundle_count, RenderBundle const* bundles) -> void {
+        return native::wgpuRenderPassEncoderExecuteBundles(*this, bundle_count, reinterpret_cast<impl::RenderBundle const*>(bundles));
+    }
+
+    auto RenderPassEncoder::insert_debug_marker(CStr marker_label) -> void {
+        return native::wgpuRenderPassEncoderInsertDebugMarker(*this, marker_label);
+    }
+
+    auto RenderPassEncoder::pop_debug_group() -> void {
+        return native::wgpuRenderPassEncoderPopDebugGroup(*this);
+    }
+
+    auto RenderPassEncoder::push_debug_group(CStr group_label) -> void {
+        return native::wgpuRenderPassEncoderPushDebugGroup(*this, group_label);
+    }
+
+    auto RenderPassEncoder::set_bind_group(
+        uint32_t group_idx,
+        BindGroup& group,
+        size_t dynamic_offset_count,
+        uint32_t const* dynamic_offsets
+    ) -> void {
+        return native::wgpuRenderPassEncoderSetBindGroup(
+            *this,
+            group_idx,
+            group,
+            dynamic_offset_count,
+            dynamic_offsets
+        );
+    }
+
+    auto RenderPassEncoder::set_blend_constant(const Color& color) -> void {
+        return native::wgpuRenderPassEncoderSetBlendConstant(*this, &color);
+    }
+
+    auto RenderPassEncoder::set_index_buffer(
+        Buffer& buffer,
+        IndexFormat format,
+        uint64_t offset,
+        uint64_t size
+    ) -> void {
+        return native::wgpuRenderPassEncoderSetIndexBuffer(
+            *this,
+            buffer,
+            format,
+            offset,
+            size
+        );
+    }
+
+    auto RenderPassEncoder::label(CStr label) -> void {
+        return native::wgpuRenderPassEncoderSetLabel(*this, label);
+    }
+
+    auto RenderPassEncoder::set_pipeline(RenderPipeline& pipeline) -> void {
+        return native::wgpuRenderPassEncoderSetPipeline(*this, pipeline);
+    }
+
+    auto RenderPassEncoder::set_scissor_rect(
+        uint32_t x,
+        uint32_t y,
+        uint32_t width,
+        uint32_t height
+    ) -> void {
+        return native::wgpuRenderPassEncoderSetScissorRect(*this, x, y, width, height);
+    }
+
+    auto RenderPassEncoder::set_stencil_reference(uint32_t reference) -> void {
+        return native::wgpuRenderPassEncoderSetStencilReference(*this, reference);
+    }
+
+    auto RenderPassEncoder::set_vertex_buffer(
+        uint32_t slot,
+        Buffer& buffer,
+        uint64_t offset,
+        uint64_t size
+    ) -> void {
+        return native::wgpuRenderPassEncoderSetVertexBuffer(
+            *this,
+            slot,
+            buffer,
+            offset,
+            size
+        );
+    }
+
+    auto RenderPassEncoder::set_viewport(
+        float x,
+        float y,
+        float width,
+        float height,
+        float min_depth,
+        float max_depth
+    ) -> void {
+        return native::wgpuRenderPassEncoderSetViewport(
+            *this,
+            x,
+            y,
+            width,
+            height,
+            min_depth,
+            max_depth
+        );
+    }
+
+    // RenderPipeline Methods
+
+    auto RenderPipeline::get_bind_group_layout(uint32_t group_idx) -> BindGroupLayout {
+        return { native::wgpuRenderPipelineGetBindGroupLayout(*this, group_idx) };
+    }
+
+    auto RenderPipeline::label(CStr label) -> void {
+        return native::wgpuRenderPipelineSetLabel(*this, label);
+    }
+
+    // Sampler Methods
+    
+    auto Sampler::label(CStr label) -> void {
+        return native::wgpuSamplerSetLabel(*this, label);
+    }
+
+    // ShaderModule Methods
+
+    auto ShaderModule::get_compilation_info(CompilationInfoCallback&& callback) -> std::unique_ptr<CompilationInfoCallback> {
+        std::cerr << "TODO: Unimplemented" << std::endl;
+        std::abort();
+    }
+
+    auto ShaderModule::label(CStr label) -> void {
+        return native::wgpuShaderModuleSetLabel(*this, label);
+    }
+
+    // Surface Methods
+
+    auto Surface::get_preferred_format(Adapter& adapter) -> TextureFormat {
+        return native::wgpuSurfaceGetPreferredFormat(*this, adapter);
+    }
+
+    // SwapChain Methods
+
+    auto SwapChain::get_current_texture_view() -> TextureView {
+        return { native::wgpuSwapChainGetCurrentTextureView(*this) };
+    }
+
+    auto SwapChain::present() -> void {
+        return native::wgpuSwapChainPresent(*this);
+    }
+
+    // Texture Methods
+
+    auto Texture::create_view(const TextureViewDescriptor& desc) -> TextureView {
+        return { native::wgpuTextureCreateView(*this, &desc) };
+    }
+
+    auto Texture::destroy() -> void {
+        return native::wgpuTextureDestroy(*this);
+    }
+
+    auto Texture::get_depth_or_array_layers() -> uint32_t {
+        return native::wgpuTextureGetDepthOrArrayLayers(*this);
+    }
+
+    auto Texture::get_dimension() -> TextureDimension {
+        return native::wgpuTextureGetDimension(*this);
+    }
+
+    auto Texture::get_format() -> TextureFormat {
+        return native::wgpuTextureGetFormat(*this);
+    }
+
+    auto Texture::get_height() -> uint32_t {
+        return native::wgpuTextureGetHeight(*this);
+    }
+
+    auto Texture::get_mip_level_count() -> uint32_t {
+        return native::wgpuTextureGetMipLevelCount(*this);
+    }
+
+    auto Texture::get_sample_count() -> uint32_t {
+        return native::wgpuTextureGetSampleCount(*this);
+    }
+
+    auto Texture::get_usage() -> TextureUsageFlags {
+        return native::wgpuTextureGetUsage(*this);
+    }
+
+    auto Texture::label(CStr label) -> void {
+        return native::wgpuTextureSetLabel(*this, label);
+    }
+
+    // TextureView Methods
+    
+    auto TextureView::label(CStr label) -> void {
+        return native::wgpuTextureViewSetLabel(*this, label);
+    }
+
 } // namespace wgpu
