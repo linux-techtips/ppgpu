@@ -1,7 +1,8 @@
 #pragma once
 
-#include <algorithm>
-#include <memory>
+#include <exception>
+#include <future>
+#include <iostream>
 
 #define WGPU_TARGET_MACOS 1
 #define WGPU_TARGET_LINUX_X11 2
@@ -16,13 +17,10 @@
 #define WGPU_TARGET WGPU_TARGET_LINUX_X11
 #endif
 
-#include <type_traits>
-#include <iostream>
-
 using CStr = char const*;
 
 namespace wgpu {
-    
+
     #define END };
 
     static constexpr auto ARRAY_LAYER_COUNT_UNDEFINED = 0xffffffffUL;
@@ -971,7 +969,7 @@ namespace wgpu {
 
     // CALLBACKS
     
-    using BufferMapCallback = auto(*)(BufferMapAsyncStatus) -> void;
+    using BufferMapCallback = auto(*)(BufferMapAsyncStatus, void* user_data) -> void;
     using CompilationInfoCallback = auto(*)(CompilationInfoRequestStatus status, CompilationInfo& compilation_info, void* user_data) -> void;
     using CreateComputePipelineAsyncCallback = auto(*)(CreatePipelineAsyncStatus status, impl::ComputePipeline pipeline, CStr msg, void* user_data) -> void;
     using CreateRenderPipelineAsyncCallback = auto(*)(CreatePipelineAsyncStatus status, impl::RenderPipeline pipeline, CStr msg, void* user_data) -> void;
@@ -991,7 +989,6 @@ namespace wgpu {
     #define DESCRIPTOR_CONST(Type) \
         STRUCT(Type) \
         ChainedStruct const* next_in_chain{}; \
-
 
     DESCRIPTOR(AdapterProperties)
         uint32_t vendor_id {};
@@ -2345,11 +2342,21 @@ namespace wgpu {
         inline auto release() -> void { native::wgpu ## Type ## Release(*this); }; \
 
     HANDLE(Adapter)
-        inline auto enumerate_features(FeatureName* features) -> size_t;
-        inline auto get_limits(SupportedLimits* limits) -> bool;
+        [[nodiscard]] inline auto enumerate_features(FeatureName* features) -> size_t;
+        [[nodiscard]] inline auto get_limits(SupportedLimits* limits) -> bool;
         inline auto get_properties(AdapterProperties* properties) -> void;
-        inline auto has_feature(FeatureName feature) -> bool;
-        inline auto request_device(const DeviceDescriptor& descriptor, RequestDeviceCallback&& callback) -> std::unique_ptr<RequestDeviceCallback>;
+        [[nodiscard]] inline auto has_feature(FeatureName feature) -> bool;
+        static inline auto request_device_callback(
+            RequestDeviceStatus status,
+            impl::Device device,
+            CStr msg,
+            void* promise_raw
+        ) -> void;
+        [[nodiscard]] inline auto request_device(
+            const DeviceDescriptor& descriptor,
+            std::launch policy = std::launch::any,
+            RequestDeviceCallback&& callback = Adapter::request_device_callback
+        ) -> std::future<Device>; 
     END
 
     HANDLE(BindGroup)
@@ -2372,7 +2379,7 @@ namespace wgpu {
             size_t offset,
             size_t size,
             BufferMapCallback&& callback
-        ) -> std::unique_ptr<BufferMapCallback>;
+        ) -> std::future<void>;
         inline auto unmap() -> void;
     END
 
@@ -2485,7 +2492,12 @@ namespace wgpu {
         [[nodiscard]] static inline auto init(const InstanceDescriptor& desc) -> Instance;
         [[nodiscard]] static inline auto init() -> Instance;
         [[nodiscard]] inline auto create_surface(const SurfaceDescriptor& desc) -> Surface;
-        [[nodiscard]] inline auto request_adapter(const RequestAdapterOptions& opts) -> Adapter;
+        static inline auto request_adapter_callback(RequestAdapterStatus status, impl::Adapter adapter, CStr msg, void* promise_raw) -> void;
+        [[nodiscard]] inline auto request_adapter(
+            const RequestAdapterOptions& opts,
+            std::launch = std::launch::any,
+            RequestAdapterCallback&& callback = Instance::request_adapter_callback
+        ) -> std::future<Adapter>;
         inline auto process_events() -> void;
     END
 
@@ -2668,7 +2680,7 @@ namespace wgpu {
     END
 
     // Adapter Methods
-    
+
     auto Adapter::enumerate_features(FeatureName* features) -> size_t {
         return native::wgpuAdapterEnumerateFeatures(*this, features);
     }
@@ -2685,12 +2697,34 @@ namespace wgpu {
         return native::wgpuAdapterHasFeature(*this, feature);
     }
 
+    auto Adapter::request_device_callback(RequestDeviceStatus status, impl::Device device, CStr msg, void* promise_raw) -> void {
+        auto& promise = *reinterpret_cast<std::promise<impl::Device>*>(promise_raw);
+        if (status != RequestDeviceStatus::Success) {
+            promise.set_exception(std::make_exception_ptr(
+                std::runtime_error("Failed to request device: " + std::string(msg))
+            ));
+        } else {
+            promise.set_value(device);
+        }
+    };
+
     auto Adapter::request_device(
-        const DeviceDescriptor&  desc,
+        const DeviceDescriptor& desc,
+        std::launch policy,
         RequestDeviceCallback&& callback
-    ) -> std::unique_ptr<RequestDeviceCallback> {
-        std::cerr << "TODO: Unimplemented" << std::endl;
-        std::abort();
+    ) -> std::future<Device> { 
+        return std::async(policy, [=]() -> Device {
+            auto promise = std::promise<impl::Device>{}; // Should be std::shared<std::promise>> but I'm in a goofy mood
+            
+            native::wgpuAdapterRequestDevice(
+                *this,
+                &desc,
+                callback,
+                &promise
+            );
+            
+            return { promise.get_future().get() };
+        });
     }
 
     // BindGroup Methods
@@ -2735,9 +2769,18 @@ namespace wgpu {
         size_t offset,
         size_t size,
         BufferMapCallback&& callback
-    ) -> std::unique_ptr<BufferMapCallback> {
-        std::cerr << "TODO: Unimplemented" << std::endl;
-        std::abort();
+    ) -> std::future<void> {
+        auto task = std::make_shared<std::packaged_task<std::remove_pointer_t<BufferMapCallback>>>(callback);
+   
+        native::wgpuBufferMapAsync(*this, mode, offset, size,
+            [](BufferMapAsyncStatus status, void* user_data) {
+                auto* task = static_cast<std::packaged_task<void(BufferMapAsyncStatus)>*>(user_data);
+                (*task)(status);
+            },
+            task.get()
+        );
+
+        return task->get_future();
     }
 
     auto Buffer::unmap() -> void {
@@ -3021,37 +3064,39 @@ namespace wgpu {
         return { native::wgpuInstanceCreateSurface(*this, &desc) } ;
     }
 
-    auto Instance::request_adapter(const RequestAdapterOptions& opts) -> Adapter {
-        struct UserData {
-            impl::Adapter adapter {};
-            bool request_ended {};
-        };
-
-        auto callback = [](wgpu::RequestAdapterStatus status, wgpu::impl::Adapter adapter, CStr msg, void* user_data_raw) {
-            auto& user_data = *reinterpret_cast<UserData*>(user_data_raw);
-            if (status == wgpu::RequestAdapterStatus::Success) {
-                user_data.adapter = adapter;
-            } else {
-                std::cerr << "Couldn't request WebGPU Adapter: " << msg << std::endl;
-            }
-            user_data.request_ended = true;
-        };
-
-        auto user_data = UserData{};
-        native::wgpuInstanceRequestAdapter(
-            *this,
-            &opts,
-            callback,
-            (void*)&user_data
-        );
-    
-        const auto [adapter, ended] = user_data;
-        if (!ended) {
-            std::cerr << "Adapter Request Incomplete" << std::endl;
-            std::abort();
+    auto Instance::request_adapter_callback(
+        RequestAdapterStatus status,
+        impl::Adapter adapter,
+        CStr msg,
+        void* promise_raw 
+    ) -> void {
+        auto& promise = *reinterpret_cast<std::promise<impl::Adapter>*>(promise_raw);
+        if (status != RequestAdapterStatus::Success) {
+            promise.set_exception(std::make_exception_ptr(
+                std::runtime_error("Failed to request adapter" + std::string(msg))
+            ));
+        } else {
+            promise.set_value(adapter);
         }
+    }
 
-        return { adapter };
+    auto Instance::request_adapter(
+        const RequestAdapterOptions& opts,
+        std::launch policy,
+        RequestAdapterCallback&& callback
+    ) -> std::future<Adapter> {
+        return std::async(policy, [=]() -> Adapter {
+            auto promise = std::promise<impl::Adapter>{};
+
+            native::wgpuInstanceRequestAdapter(
+                *this,
+                &opts,
+                callback,
+                &promise
+            );
+
+            return { promise.get_future().get() };
+        });
     }
 
     // PipelineLayout Methods
