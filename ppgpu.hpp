@@ -3,6 +3,8 @@
 #include <exception>
 #include <future>
 #include <iostream>
+#include <sstream>
+#include <utility>
 
 #define WGPU_TARGET_MACOS 1
 #define WGPU_TARGET_LINUX_X11 2
@@ -134,23 +136,21 @@ namespace wgpu {
     // ENUMERATIONS
 
     #define ENUM(Name) enum class Name : int32_t {
-
-    template <typename T>
-    static constexpr auto Force32() -> T {
-        return static_cast<T>(0x7FFFFFFF);
-    }
+    #define ENUM_FORCE32 Force32 = 0x7FFFFFFF
 
     ENUM(AdapterType)
         DiscreteGPU,
         IntegratedGPU,
         CPU,
         Unknown,
+        ENUM_FORCE32
     END
 
     ENUM(AddressMode)
         Repeat,
         MirrorRepeat,
         ClampToEdge,
+        ENUM_FORCE32
     END
 
     ENUM(BackendType)
@@ -163,6 +163,7 @@ namespace wgpu {
         Vulkan = 0x0000006,
         OpenGL = 0x00000007,
         OpenGLES = 0x00000008,
+        ENUM_FORCE32
     END
 
     ENUM(BlendFactor)
@@ -179,6 +180,7 @@ namespace wgpu {
         SrcAlphaSaturated,
         Constant,
         OneMinusConstant,
+        ENUM_FORCE32
     END
 
     ENUM(BlendOperation)
@@ -187,6 +189,7 @@ namespace wgpu {
         ReverseSub,
         Min,
         Max,
+        ENUM_FORCE32
     END
 
     ENUM(BufferBindingType)
@@ -194,6 +197,7 @@ namespace wgpu {
         Uniform,
         Storage,
         ReadOnlyStorage,
+        ENUM_FORCE32
     END
 
     ENUM(BufferMapAsyncStatus)
@@ -206,12 +210,14 @@ namespace wgpu {
         MappingAlreadyPending,
         OffsetOutOfRange,
         SizeOutOfRange,
+        ENUM_FORCE32
     END
 
     ENUM(BufferMapState)
         Unmapped,
         Pending,
         Mapped,
+        ENUM_FORCE32
     END
 
     ENUM(CompareFunction)
@@ -224,6 +230,7 @@ namespace wgpu {
         Equal,
         NotEqual,
         Always,
+        ENUM_FORCE32
     END
 
     ENUM(CompilationInfoRequestStatus)
@@ -231,17 +238,20 @@ namespace wgpu {
         Error,
         DeviceLost,
         Unknown,
+        ENUM_FORCE32
     END
 
     ENUM(CompilationMessageType)
         Error,
         Warning,
         Info,
+        ENUM_FORCE32
     END
 
     ENUM(ComputePassTimestampLocation)
         Beginning,
         End,
+        ENUM_FORCE32
     END
 
     ENUM(CreatePipelineAsyncStatus)
@@ -249,14 +259,16 @@ namespace wgpu {
         ValidationError,
         InternalError,
         DeviceLost,
-        DevicesDestroyed,
+        DeviceDestroyed,
         Unknown,
+        ENUM_FORCE32
     END
 
     ENUM(CullMode)
         None,
         Front,
         Back,
+        ENUM_FORCE32
     END
 
     ENUM(DeviceLostReason)
@@ -277,6 +289,7 @@ namespace wgpu {
         Internal,
         Unknown,
         DeviceLost,
+        ENUM_FORCE32
     END
 
     ENUM(FeatureName)
@@ -293,33 +306,39 @@ namespace wgpu {
         RG11B10UfloatRenderable,
         BGRA8UnormStorage,
         Float32Filterable,
+        ENUM_FORCE32
     END
 
     ENUM(FilterMode)
         Nearest,
         Linear,
+        ENUM_FORCE32
     END
 
     ENUM(FrontFace)
         CCW,
         CW,
+        ENUM_FORCE32
     END
 
     ENUM(IndexFormat)
         Undefined,
         Uint16,
         Uint32,
+        ENUM_FORCE32
     END
 
     ENUM(LoadOp)
         Undefined,
         Clear,
         Load,
+        ENUM_FORCE32
     END
 
     ENUM(MipmapFilterMode)
         Nearest,
         Linear,
+        ENUM_FORCE32
     END
 
     ENUM(PipelineStatisticsName)
@@ -328,18 +347,21 @@ namespace wgpu {
         ClipperPrimitivesOut,
         FragmentShaderInvocations,
         ComputeShaderInvocations,
+        ENUM_FORCE32
     END
 
     ENUM(PowerPreference)
         Undefined,
         LowPower,
         HighPerformance,
+        ENUM_FORCE32
     END
 
     ENUM(PresentMode)
         Immediate,
         Mailbox,
         Fifo,
+        ENUM_FORCE32
     END
 
     ENUM(PrimitiveTopology)
@@ -348,12 +370,14 @@ namespace wgpu {
         LineStrip,
         TriangleList,
         TriangleStrip,
+        ENUM_FORCE32
     END
 
     ENUM(QueryType)
         Occlusion,
         PipelineStatistics,
         Timestamp,
+        ENUM_FORCE32
     END
 
     ENUM(QueueWorkDoneStatus)
@@ -361,11 +385,13 @@ namespace wgpu {
         Error,
         Unknown,
         DeviceLost,
+        ENUM_FORCE32
     END
 
     ENUM(RenderPassTimestampLocation)
         Beginning,
         End,
+        ENUM_FORCE32
     END
 
     ENUM(RequestAdapterStatus)
@@ -373,12 +399,14 @@ namespace wgpu {
         Unavailable = 0x00000001,
         Error = 0x00000002,
         Unknown = 0x00000003,
+        ENUM_FORCE32
     END
 
-    ENUM(RequestDeviceStatus)
+    ENUM(RequestDeviceAsyncStatus)
         Success,
         Error,
-        Unkown,
+        Unknown,
+        ENUM_FORCE32
     END
 
     ENUM(SType)
@@ -394,6 +422,7 @@ namespace wgpu {
         SurfaceDescriptorFromAndroidNativeWindow,
         SurfaceDescriptorFromXcbWindow,
         RenderPassDescriptorMaxDrawCount,
+        ENUM_FORCE32
     END
 
     ENUM(SamplerBindingType)
@@ -401,6 +430,7 @@ namespace wgpu {
         Filtering,
         NonFiltering,
         Comparison,
+        ENUM_FORCE32
     END
 
     ENUM(StencilOperation)
@@ -412,29 +442,34 @@ namespace wgpu {
         DecrementClamp,
         IncrementWrap,
         DecrementWrap,
+        ENUM_FORCE32
     END
 
     ENUM(StorageTextureAccess)
         Undefined,
         WriteOnly,
+        ENUM_FORCE32
     END
 
     ENUM(StoreOp)
         Undefined,
         Store,
         Discard,
+        ENUM_FORCE32
     END
 
     ENUM(TextureAspect)
         All,
         StencilOnly,
         DepthOnly,
+        ENUM_FORCE32
     END
 
     ENUM(TextureDimension)
         D1,
         D2,
         D3,
+        ENUM_FORCE32
     END
 
     ENUM(TextureFormat)
@@ -533,6 +568,7 @@ namespace wgpu {
         ASTC12x10UnormSrgb,
         ASTC12x12Unorm,
         ASTC12x12UnormSrgb,
+        ENUM_FORCE32
     END
 
     ENUM(TextureSampleType)
@@ -542,6 +578,7 @@ namespace wgpu {
         Depth,
         Sint,
         Uint,
+        ENUM_FORCE32
     END
 
     ENUM(TextureViewDimension)
@@ -552,6 +589,7 @@ namespace wgpu {
         Cube,
         CubeArray,
         D3,
+        ENUM_FORCE32
     END
 
     ENUM(VertexFormat)
@@ -586,12 +624,14 @@ namespace wgpu {
         Sint32x2,
         Sint32x3,
         Sint32x4,
+        ENUM_FORCE32
     END
 
     ENUM(VertexStepMode)
         Vertex = 0x00000000,
         Instance = 0x00000001,
         VertexBufferNotUsed = 0x00000002,
+        ENUM_FORCE32
     END
 
     ENUM(BufferUsage)
@@ -606,6 +646,7 @@ namespace wgpu {
         Storage = 0x00000080,
         Indirect = 0x00000100,
         QueryResolve = 0x00000200,
+        ENUM_FORCE32
     END
 
     ENUM(BufferUsageFlags)
@@ -618,6 +659,7 @@ namespace wgpu {
         Blue = 0x00000004,
         Alpha = 0x00000008,
         All = 0x00000010,
+        ENUM_FORCE32
     END
 
     ENUM(ColorWriteMaskFlags)
@@ -627,6 +669,7 @@ namespace wgpu {
         None,
         Read,
         Write,
+        ENUM_FORCE32
     END
 
     ENUM(MapModeFlags)
@@ -637,6 +680,7 @@ namespace wgpu {
         Vertex = 0x00000001,
         Fragment = 0x00000002,
         Compute = 0x00000004,
+        ENUM_FORCE32
     END
 
     ENUM(ShaderStageFlags)
@@ -649,6 +693,7 @@ namespace wgpu {
         TextureBinding = 0x00000004,
         StorageBinding = 0x00000008,
         RenderAttachment = 0x00000010,
+        ENUM_FORCE32
     END
 
     ENUM(TextureUsageFlags)
@@ -663,6 +708,7 @@ namespace wgpu {
         SupportedLimitsExtras = 0x60000003,
         InstanceExtras = 0x60000006,
         SwapChainDeviceDescriptorExtras = 0x60000007,
+        ENUM_FORCE32
     END
 
     ENUM(NativeFeature)
@@ -671,6 +717,7 @@ namespace wgpu {
         MultiDrawIndirect = 0x60000003,
         MultiDrawIndirectCount = 0x60000004,
         VertexWritableStorage = 0x60000005,
+        ENUM_FORCE32
     END
 
     ENUM(LogLevel)
@@ -680,6 +727,7 @@ namespace wgpu {
         Info,
         Debug,
         Trace,
+        ENUM_FORCE32
     END
 
     ENUM(InstanceBackend)
@@ -692,12 +740,14 @@ namespace wgpu {
         Primary = InstanceBackend::Vulkan,
         Secondary = InstanceBackend::GL,
         None = 0,
+        ENUM_FORCE32
     END
 
     ENUM(DX12Compiler)
         Undefined,
         Fxc,
         Dxc,
+        ENUM_FORCE32
     END
 
     ENUM(CompositeAlphaMode)
@@ -706,8 +756,235 @@ namespace wgpu {
         PreMultiplied,
         PostMultiplied,
         Inherit,
+        ENUM_FORCE32
     END
 
+        inline auto operator<<(std::ostream& os, AdapterType value) -> std::ostream& {
+            switch (value) {
+                case AdapterType::DiscreteGPU: return os << "AdapterType::DiscreteGPU";
+                case AdapterType::IntegratedGPU: return os << "AdapterType::IntegratedGPU";
+                case AdapterType::CPU: return os << "AdapterType::CPU";
+                case AdapterType::Unknown: return os << "AdapterType::Unknown";
+                case AdapterType::Force32: return os << "AdapterType::Force32";
+            }
+        }
+
+        inline auto operator<<(std::ostream& os, AddressMode value) -> std::ostream& {
+            switch(value) {
+                case AddressMode::Repeat: return os << "AddressMode::Repeat";
+                case AddressMode::MirrorRepeat: return os << "AddressMode::MirrorRepeat";
+                case AddressMode::ClampToEdge: return os << "AddressMode::ClampToEdge";
+                case AddressMode::Force32: return os << "AddressMode::Force32";
+            }
+        }
+
+        inline auto operator<<(std::ostream& os, BackendType value) -> std::ostream& {
+            switch(value) {
+                case BackendType::Undefined: return os << "BackendType::Undefined";
+                case BackendType::Null: return os << "BackendType::Null";
+                case BackendType::WebGPU: return os << "BackendType::WebGPU";
+                case BackendType::D3D11: return os << "BackendType::D3D11";
+                case BackendType::D3D12: return os << "BackendType::D3D12";
+                case BackendType::Metal: return os << "BackendType::Metal";
+                case BackendType::Vulkan: return os << "BackendType::Vulkan";
+                case BackendType::OpenGL: return os << "BackendType::OpenGL";
+                case BackendType::OpenGLES: return os << "BackendType::OpenGLES";
+                case BackendType::Force32: return os << "BackendType::Force32";
+            }
+        }
+
+        inline auto operator<<(std::ostream& os, BlendFactor value) -> std::ostream& {
+            return os << (int)value; 
+        }
+
+        inline auto operator<<(std::ostream& os, BlendOperation value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, BufferBindingType value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, BufferMapAsyncStatus value) -> std::ostream& {
+            switch(value) {
+                case BufferMapAsyncStatus::Success: return os << "BufferMapAsyncStatus::Success";
+                case BufferMapAsyncStatus::ValidationError: return os << "BufferMapAsyncStatus::ValidationError";
+                case BufferMapAsyncStatus::Unknown: return os << "BufferMapAsyncStatus::Unknown";
+                case BufferMapAsyncStatus::DeviceLost: return os << "BufferMapAsyncStatus::DeviceLost";
+                case BufferMapAsyncStatus::DestroyedBeforeCallback: return os << "BufferMapAsyncStatus::DestroyedBeforeCallback";
+                case BufferMapAsyncStatus::UnmappedBeforeCallback: return os << "BufferMapAsyncStatus::UnmappedBeforeCallback";
+                case BufferMapAsyncStatus::MappingAlreadyPending: return os << "BufferMapAsyncStatus::MappingAlreadyPending";
+                case BufferMapAsyncStatus::OffsetOutOfRange: return os << "BufferMapAsyncStatus::OffsetOutOfRange";
+                case BufferMapAsyncStatus::SizeOutOfRange: return os << "BufferMapAsyncStatus";
+                case BufferMapAsyncStatus::Force32: return os << "BufferMapAsyncStatus::Force32";
+            };
+        }
+
+        inline auto operator<<(std::ostream& os, BufferMapState value) -> std::ostream& {
+            return os << (int)value;
+        }
+        
+        inline auto operator<<(std::ostream& os, CompareFunction value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, CompilationInfoRequestStatus value) -> std::ostream& {
+            switch(value) {
+                case CompilationInfoRequestStatus::Success: return os << "CompilationInfoRequestStatus::Success";
+                case CompilationInfoRequestStatus::Error: return os << "CompilationInfoRequestStatus::Error";
+                case CompilationInfoRequestStatus::DeviceLost: return os << "CompilationInfoRequestStatus::DeviceLost";
+                case CompilationInfoRequestStatus::Unknown: return os << "CompilationInfoRequestStatus::Unknown";
+                case CompilationInfoRequestStatus::Force32: return os << "CompilationInfoRequestStatus::Force32";
+            }
+        }
+
+        inline auto operator<<(std::ostream& os, ComputePassTimestampLocation value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, CreatePipelineAsyncStatus value) -> std::ostream& {
+            switch(value) {
+                case CreatePipelineAsyncStatus::Success: return os << "CreatePipelineAsyncStatus::Success";
+                case CreatePipelineAsyncStatus::ValidationError: return os << "CreatePipelineAsyncStatus::ValidationError";
+                case CreatePipelineAsyncStatus::InternalError: return os << "CreatePipelineAsyncStatus::InternalError";
+                case CreatePipelineAsyncStatus::DeviceLost: return os << "CreatePipelineAsyncStatus::DeviceLost";
+                case CreatePipelineAsyncStatus::DeviceDestroyed: return os << "CreatePipelineAsyncStatus::DeviceDestroyed";
+                case CreatePipelineAsyncStatus::Unknown: return os << "CreatePipelineAsyncStatus::Unknown";
+                case CreatePipelineAsyncStatus::Force32 : return os << "CreatePipelineAsyncStatus::Force32";
+            }
+        }
+
+        inline auto operator<<(std::ostream& os, CullMode value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, DeviceLostReason value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, ErrorFilter value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, ErrorType value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, FeatureName value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, FilterMode value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, FrontFace value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, IndexFormat value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, LoadOp value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, MipmapFilterMode value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+        inline auto operator<<(std::ostream& os, PipelineStatisticsName value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, PowerPreference value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, PresentMode value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, PrimitiveTopology value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, QueryType value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, QueueWorkDoneStatus value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, RenderPassTimestampLocation value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, RequestAdapterStatus value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, RequestDeviceAsyncStatus value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, SType value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, SamplerBindingType value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, StencilOperation value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, StorageTextureAccess value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, StoreOp value) -> std::ostream& {
+            return os << (int)value;
+        }
+ 
+        inline auto operator<<(std::ostream& os, TextureAspect value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+       inline auto operator<<(std::ostream& os, TextureDimension value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+       inline auto operator<<(std::ostream& os, TextureFormat value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+       inline auto operator<<(std::ostream& os, VertexStepMode value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+       inline auto operator<<(std::ostream& os, BufferUsage value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+       inline auto operator<<(std::ostream& os, ColorWriteMask value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+       inline auto operator<<(std::ostream& os, MapMode value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+       inline auto operator<<(std::ostream& os, ShaderStage value) -> std::ostream& {
+            return os << (int)value;
+        }
+
+       inline auto operator<<(std::ostream& os, TextureUsage value) -> std::ostream& {
+            return os << (int)value;
+        }
 
     // PLATFORM DEFAULTS
 
@@ -970,16 +1247,41 @@ namespace wgpu {
     // CALLBACKS
     
     using BufferMapCallback = auto(*)(BufferMapAsyncStatus, void* user_data) -> void;
-    using CompilationInfoCallback = auto(*)(CompilationInfoRequestStatus status, CompilationInfo& compilation_info, void* user_data) -> void;
+    using CompilationInfoCallback = auto(*)(CompilationInfoRequestStatus status, CompilationInfo* compilation_info, void* user_data) -> void;
     using CreateComputePipelineAsyncCallback = auto(*)(CreatePipelineAsyncStatus status, impl::ComputePipeline pipeline, CStr msg, void* user_data) -> void;
     using CreateRenderPipelineAsyncCallback = auto(*)(CreatePipelineAsyncStatus status, impl::RenderPipeline pipeline, CStr msg, void* user_data) -> void;
     using DeviceLostCallback = auto(*)(DeviceLostReason reason, CStr msg, void* user_data) -> void;
     using ErrorCallback = auto(*)(ErrorType type, CStr msg, void* user_data) -> void;
-    using QueueWorkDoneCallback = auto(*)(QueueWorkDoneStatus status) -> void;
+    using QueueWorkDoneCallback = auto(*)(QueueWorkDoneStatus status, void* user_data) -> void;
     using RequestAdapterCallback = auto(*)(RequestAdapterStatus status, impl::Adapter adapter, CStr msg, void* user_data) -> void;
-    using RequestDeviceCallback = auto(*)(RequestDeviceStatus status, impl::Device device, CStr msg, void* user_data) -> void;
+    using RequestDeviceCallback = auto(*)(RequestDeviceAsyncStatus status, impl::Device device, CStr msg, void* user_data) -> void;
     using ProcDeviceSetUncapturedErrorCallback = auto(*)(impl::Device device, ErrorCallback&& callback, void* user_data) -> void;
     using LogCallback = auto(*)(LogLevel level, CStr msg) -> void;
+
+    namespace {
+
+        #define CATCHME_MSG_IMPL(Status) \
+            inline auto catchme(Status status, CStr msg) -> std::exception_ptr { \
+                const auto msg_stream = std::stringstream{} << "[FATAL] " << status << ": " << msg; \
+                return std::make_exception_ptr(std::runtime_error(msg_stream.str())); \
+            }
+
+        #define CATCHME_IMPL(Status) \
+            inline auto catchme(Status status) -> std::exception_ptr { \
+                const auto msg_stream = std::stringstream{} << "[FATAL] " << status; \
+                return std::make_exception_ptr(std::runtime_error(msg_stream.str())); \
+            }
+
+        CATCHME_IMPL(BufferMapAsyncStatus)
+        CATCHME_IMPL(CompilationInfoRequestStatus)
+        CATCHME_MSG_IMPL(CreatePipelineAsyncStatus)
+        CATCHME_MSG_IMPL(DeviceLostReason)
+        CATCHME_MSG_IMPL(ErrorType)
+        CATCHME_IMPL(QueueWorkDoneStatus)
+        CATCHME_MSG_IMPL(RequestAdapterStatus)
+        CATCHME_MSG_IMPL(RequestDeviceAsyncStatus)
+
+    }
 
     // DESCRIPTORS
     #define DESCRIPTOR(Type) \
@@ -1268,7 +1570,7 @@ namespace wgpu {
     DESCRIPTOR_CONST(ComputePipelineDescriptor)
         CStr label {};
         impl::PipelineLayout layout{};
-        ProgrammableStageDescriptor compute{};
+        ProgrammableStageDescriptor compute {};
     END
 
     DESCRIPTOR_CONST(DeviceDescriptor)
@@ -2346,15 +2648,18 @@ namespace wgpu {
         [[nodiscard]] inline auto get_limits(SupportedLimits* limits) -> bool;
         inline auto get_properties(AdapterProperties* properties) -> void;
         [[nodiscard]] inline auto has_feature(FeatureName feature) -> bool;
-        static inline auto request_device_callback(
-            RequestDeviceStatus status,
+        static auto request_device_callback(
+            RequestDeviceAsyncStatus status,
             impl::Device device,
             CStr msg,
             void* promise_raw
         ) -> void;
         [[nodiscard]] inline auto request_device(
+            const DeviceDescriptor& desc,
+            RequestDeviceCallback&& callback = Adapter::request_device_callback
+        ) -> Device;
+        [[nodiscard]] inline auto request_device_async(
             const DeviceDescriptor& descriptor,
-            std::launch policy = std::launch::any,
             RequestDeviceCallback&& callback = Adapter::request_device_callback
         ) -> std::future<Device>; 
     END
@@ -2374,11 +2679,12 @@ namespace wgpu {
         [[nodiscard]] inline auto get_map_state() -> BufferMapState;
         [[nodiscard]] inline auto get_size() -> uint64_t;
         [[nodiscard]] inline auto get_usage() -> BufferUsageFlags;
+        static auto map_callback(BufferMapAsyncStatus status, void* promise_raw) -> void;
         [[nodiscard]] inline auto map_async(
             MapModeFlags mode,
             size_t offset,
             size_t size,
-            BufferMapCallback&& callback
+            BufferMapCallback&& callback = Buffer::map_callback
         ) -> std::future<void>;
         inline auto unmap() -> void;
     END
@@ -2461,18 +2767,30 @@ namespace wgpu {
         [[nodiscard]] inline auto create_buffer(const BufferDescriptor& desc) -> Buffer;
         [[nodiscard]] inline auto create_command_encoder(const CommandEncoderDescriptor& desc) -> CommandEncoder;
         [[nodiscard]] inline auto create_compute_pipeline(const ComputePipelineDescriptor& desc) -> ComputePipeline;
+        static auto create_compute_pipeline_callback(
+            CreatePipelineAsyncStatus status,
+            impl::ComputePipeline pipeline,
+            CStr msg,
+            void* promise_raw
+        ) -> void;
         [[nodiscard]] inline auto create_compute_pipeline_async(
             const ComputePipelineDescriptor& desc,
-            CreateComputePipelineAsyncCallback&& callback
-        ) -> std::unique_ptr<CreateComputePipelineAsyncCallback>;
+            CreateComputePipelineAsyncCallback&& callback = Device::create_compute_pipeline_callback
+        ) -> std::future<ComputePipeline>; 
         [[nodiscard]] inline auto create_pipeline_layout(const PipelineLayoutDescriptor& desc) -> PipelineLayout;
         [[nodiscard]] inline auto create_query_set(const QuerySetDescriptor& desc) -> QuerySet;
         [[nodiscard]] inline auto create_render_bundle_encoder(const RenderBundleEncoderDescriptor& desc) -> RenderBundleEncoder;
         [[nodiscard]] inline auto create_render_pipeline(const RenderPipelineDescriptor& desc) -> RenderPipeline;
+        static auto create_render_pipeline_callback(
+            CreatePipelineAsyncStatus status,
+            impl::RenderPipeline pipeline, 
+            CStr msg,
+            void* promise_raw
+        ) -> void;
         [[nodiscard]] inline auto create_render_pipeline_async(
             const RenderPipelineDescriptor& desc,
-            CreateRenderPipelineAsyncCallback&& callback
-        ) -> std::unique_ptr<CreateRenderPipelineAsyncCallback>;
+            CreateRenderPipelineAsyncCallback&& callback = Device::create_render_pipeline_callback
+        ) -> std::future<RenderPipeline>;
         [[nodiscard]] inline auto create_sampler(const SamplerDescriptor& desc) -> Sampler;
         [[nodiscard]] inline auto create_shader_module(const ShaderModuleDescriptor& desc) -> ShaderModule;
         [[nodiscard]] inline auto create_swapchain(Surface& surface, const SwapChainDescriptor& desc) -> SwapChain;
@@ -2482,20 +2800,28 @@ namespace wgpu {
         inline auto get_limits(SupportedLimits* limits) -> bool;
         [[nodiscard]] inline auto get_queue() -> Queue;
         [[nodiscard]] inline auto has_feature(FeatureName feature) -> bool;
-        [[nodiscard]] inline auto pop_error_scope(ErrorCallback&& callback) -> std::unique_ptr<ErrorCallback>;
+        inline auto pop_error_scope(ErrorCallback&& callback, void* user_data) -> void;
         inline auto push_error_scope(ErrorFilter filter) -> void;
         inline auto label(CStr label) -> void;
-        [[nodiscard]] inline auto set_uncaptured_error_callback(ErrorCallback&&) -> std::unique_ptr<ErrorCallback>;
+        inline auto set_uncaptured_error_callback(ErrorCallback&& callback, void* user_data) -> void;
     END 
 
     HANDLE(Instance)
         [[nodiscard]] static inline auto init(const InstanceDescriptor& desc) -> Instance;
         [[nodiscard]] static inline auto init() -> Instance;
-        [[nodiscard]] inline auto create_surface(const SurfaceDescriptor& desc) -> Surface;
-        static inline auto request_adapter_callback(RequestAdapterStatus status, impl::Adapter adapter, CStr msg, void* promise_raw) -> void;
+        [[nodiscard]] inline auto create_surface(const SurfaceDescriptor& desc) -> Surface; 
+        static auto request_adapter_callback(
+            RequestAdapterStatus status,
+            impl::Adapter adapter,
+            CStr msg,
+            void* promise_raw
+        ) -> void;
         [[nodiscard]] inline auto request_adapter(
             const RequestAdapterOptions& opts,
-            std::launch = std::launch::any,
+            RequestAdapterCallback&& callback = Instance::request_adapter_callback
+        ) -> Adapter;
+        [[nodiscard]] inline auto request_adapter_async(
+            const RequestAdapterOptions& opts,
             RequestAdapterCallback&& callback = Instance::request_adapter_callback
         ) -> std::future<Adapter>;
         inline auto process_events() -> void;
@@ -2513,7 +2839,13 @@ namespace wgpu {
     END
 
     HANDLE(Queue)
-        [[nodiscard]] inline auto on_submitted_work_done(QueueWorkDoneCallback&& callback) -> std::unique_ptr<QueueWorkDoneCallback>;
+        static auto on_submitted_work_done_callback(QueueWorkDoneStatus status, void* promise_raw) -> void;
+        inline auto on_submitted_work_done(
+            QueueWorkDoneCallback&& callback
+        ) -> void;
+        [[nodiscard]] inline auto on_submitted_work_done_async(
+            QueueWorkDoneCallback&& callback
+        ) -> std::future<void>; 
         inline auto label(CStr label) -> void;
         inline auto submit(size_t command_count, CommandBuffer const* commands) -> void;
         inline auto write_buffer(
@@ -2648,7 +2980,17 @@ namespace wgpu {
     END
 
     HANDLE(ShaderModule)
-        [[nodiscard]] inline auto get_compilation_info(CompilationInfoCallback&& callback) -> std::unique_ptr<CompilationInfoCallback>;
+        static auto get_compilation_info_callback(
+            CompilationInfoRequestStatus status,
+            CompilationInfo* compilation_info,
+            void* user_data
+        ) -> void;
+        [[nodiscard]] inline auto get_compilation_info(
+            CompilationInfoCallback&& callback = ShaderModule::get_compilation_info_callback
+        ) -> CompilationInfo;
+        [[nodiscard]] inline auto get_compilation_info_async(
+            CompilationInfoCallback&& callback = ShaderModule::get_compilation_info_callback
+        ) -> std::future<CompilationInfo>;
         inline auto label(CStr label) -> void;
     END
 
@@ -2697,34 +3039,44 @@ namespace wgpu {
         return native::wgpuAdapterHasFeature(*this, feature);
     }
 
-    auto Adapter::request_device_callback(RequestDeviceStatus status, impl::Device device, CStr msg, void* promise_raw) -> void {
-        auto& promise = *reinterpret_cast<std::promise<impl::Device>*>(promise_raw);
-        if (status != RequestDeviceStatus::Success) {
-            promise.set_exception(std::make_exception_ptr(
-                std::runtime_error("Failed to request device: " + std::string(msg))
-            ));
+    auto Adapter::request_device_callback(
+        RequestDeviceAsyncStatus status,
+        impl::Device device,
+        CStr msg,
+        void* promise_raw
+    ) -> void {
+        auto& promise = *reinterpret_cast<std::promise<Device>*>(promise_raw);
+        if (status != RequestDeviceAsyncStatus::Success) {
+            promise.set_exception(catchme(status, msg));
         } else {
-            promise.set_value(device);
+            promise.set_value({device});
         }
     };
 
     auto Adapter::request_device(
         const DeviceDescriptor& desc,
-        std::launch policy,
         RequestDeviceCallback&& callback
-    ) -> std::future<Device> { 
-        return std::async(policy, [=]() -> Device {
-            auto promise = std::promise<impl::Device>{}; // Should be std::shared<std::promise>> but I'm in a goofy mood
-            
-            native::wgpuAdapterRequestDevice(
-                *this,
-                &desc,
-                callback,
-                &promise
-            );
-            
-            return { promise.get_future().get() };
-        });
+    ) -> Device {
+        return this->request_device_async(
+            desc,
+            std::forward<RequestDeviceCallback>(callback)
+        ).get();
+    }
+
+    auto Adapter::request_device_async(
+        const DeviceDescriptor& desc,
+        RequestDeviceCallback&& callback
+    ) -> std::future<Device> {
+        auto promise = std::promise<Device>{};
+
+        native::wgpuAdapterRequestDevice(
+            *this,
+            &desc,
+            callback,
+            &promise
+        );
+
+        return promise.get_future();
     }
 
     // BindGroup Methods
@@ -2764,23 +3116,33 @@ namespace wgpu {
         return native::wgpuBufferGetUsage(*this);
     }
 
+    auto Buffer::map_callback(BufferMapAsyncStatus status, void* promise_raw) -> void {
+        auto& promise = *reinterpret_cast<std::promise<void>*>(promise_raw);
+        if (status != BufferMapAsyncStatus::Success) {
+            promise.set_exception(catchme(status));
+        } else {
+            promise.set_value();
+        }
+    }
+
     auto Buffer::map_async(
         MapModeFlags mode,
         size_t offset,
         size_t size,
         BufferMapCallback&& callback
     ) -> std::future<void> {
-        auto task = std::make_shared<std::packaged_task<std::remove_pointer_t<BufferMapCallback>>>(callback);
-   
-        native::wgpuBufferMapAsync(*this, mode, offset, size,
-            [](BufferMapAsyncStatus status, void* user_data) {
-                auto* task = static_cast<std::packaged_task<void(BufferMapAsyncStatus)>*>(user_data);
-                (*task)(status);
-            },
-            task.get()
+        auto promise = std::promise<void>{};
+            
+        native::wgpuBufferMapAsync(
+            *this,
+            mode,
+            offset,
+            size,
+            callback,
+            &promise
         );
 
-        return task->get_future();
+        return promise.get_future();
     }
 
     auto Buffer::unmap() -> void {
@@ -2963,13 +3325,19 @@ namespace wgpu {
         return { native::wgpuDeviceCreateComputePipeline(*this, &desc) };
     }
 
+    auto Device::create_compute_pipeline_callback(
+        CreatePipelineAsyncStatus status,
+        impl::ComputePipeline pipeline,
+        CStr msg,
+        void* promise_raw
+    ) -> void {
+        std::abort(); 
+    }
+
     auto Device::create_compute_pipeline_async(
         const ComputePipelineDescriptor& desc, 
         CreateComputePipelineAsyncCallback&& callback
-    ) -> std::unique_ptr<CreateComputePipelineAsyncCallback> {
-        std::cerr << "TODO: Unimplemented" << std::endl;
-        std::abort();
-    }
+    ) -> std::future<ComputePipeline> { std::abort(); }
 
     auto Device::create_pipeline_layout(const PipelineLayoutDescriptor& desc) -> PipelineLayout {
         return { native::wgpuDeviceCreatePipelineLayout(*this, &desc) };
@@ -2987,12 +3355,29 @@ namespace wgpu {
         return { native::wgpuDeviceCreateRenderPipeline(*this, &desc) };
     }
 
+    auto Device::create_render_pipeline_callback(
+        CreatePipelineAsyncStatus status,
+        impl::RenderPipeline pipeline,
+        CStr msg,
+        void* promise_raw
+    ) -> void {
+        std::abort();
+    }
+
     auto Device::create_render_pipeline_async(
         const RenderPipelineDescriptor& desc,
         CreateRenderPipelineAsyncCallback&& callback
-    ) -> std::unique_ptr<CreateRenderPipelineAsyncCallback> {
-        std::cerr << "TODO: Unimplemented" << std::endl;
-        std::abort();
+    ) -> std::future<RenderPipeline> {
+        auto promise = std::promise<RenderPipeline>{};
+
+        native::wgpuDeviceCreateRenderPipelineAsync(
+            *this,
+            &desc,
+            callback,
+            &promise
+        );
+
+        return promise.get_future();
     }
 
     auto Device::create_sampler(const SamplerDescriptor& desc) -> Sampler {
@@ -3031,9 +3416,15 @@ namespace wgpu {
         return native::wgpuDeviceHasFeature(*this, feature);
     }
 
-    auto Device::pop_error_scope(ErrorCallback&& callback) -> std::unique_ptr<ErrorCallback> {
-        std::cerr << "TODO: Unimplemented" << std::endl;
-        std::abort();
+    auto Device::pop_error_scope(
+        ErrorCallback&& callback,
+        void* user_data 
+    ) -> void {
+        native::wgpuDevicePopErrorScope(
+            *this,
+            callback,
+            user_data
+        );
     }
 
     auto Device::push_error_scope(ErrorFilter filter) -> void {
@@ -3044,9 +3435,8 @@ namespace wgpu {
         return native::wgpuDeviceSetLabel(*this, label);
     }
 
-    auto Device::set_uncaptured_error_callback(ErrorCallback&& callback) -> std::unique_ptr<ErrorCallback> {
-        std::cerr << "TODO: Unimplemented" << std::endl;
-        std::abort();
+    auto Device::set_uncaptured_error_callback(ErrorCallback&& callback, void* user_data) -> void {
+        return native::wgpuDeviceSetUncapturedErrorCallback(*this, callback, user_data);
     }
 
     // Instance Methods
@@ -3070,33 +3460,38 @@ namespace wgpu {
         CStr msg,
         void* promise_raw 
     ) -> void {
-        auto& promise = *reinterpret_cast<std::promise<impl::Adapter>*>(promise_raw);
+        auto& promise = *reinterpret_cast<std::promise<Adapter>*>(promise_raw);
         if (status != RequestAdapterStatus::Success) {
-            promise.set_exception(std::make_exception_ptr(
-                std::runtime_error("Failed to request adapter" + std::string(msg))
-            ));
+            promise.set_exception(catchme(status, msg));
         } else {
-            promise.set_value(adapter);
+            promise.set_value({adapter});
         }
     }
 
     auto Instance::request_adapter(
         const RequestAdapterOptions& opts,
-        std::launch policy,
+        RequestAdapterCallback&& callback
+    ) -> Adapter {
+        return this->request_adapter_async(
+            opts,
+            std::forward<RequestAdapterCallback>(callback)
+        ).get();
+    }
+
+    auto Instance::request_adapter_async(
+        const RequestAdapterOptions& opts,
         RequestAdapterCallback&& callback
     ) -> std::future<Adapter> {
-        return std::async(policy, [=]() -> Adapter {
-            auto promise = std::promise<impl::Adapter>{};
+        auto promise = std::promise<Adapter>{};
 
-            native::wgpuInstanceRequestAdapter(
-                *this,
-                &opts,
-                callback,
-                &promise
-            );
+        native::wgpuInstanceRequestAdapter(
+            *this,
+            &opts,
+            callback,
+            &promise
+        );
 
-            return { promise.get_future().get() };
-        });
+        return promise.get_future();
     }
 
     // PipelineLayout Methods
@@ -3120,10 +3515,33 @@ namespace wgpu {
     }
 
     // Queue Methods
+    
+    auto Queue::on_submitted_work_done_callback(
+        QueueWorkDoneStatus status,
+        void* promise_raw
+    ) -> void {
+        auto& promise = *reinterpret_cast<std::promise<void>*>(promise_raw);
+        if (status != QueueWorkDoneStatus::Success) {
+            promise.set_exception(catchme(status));
+        } else {
+            promise.set_value();
+        }
+    }
 
-    auto Queue::on_submitted_work_done(QueueWorkDoneCallback&& callback) -> std::unique_ptr<QueueWorkDoneCallback> {
-        std::cerr << "TODO: Unimplemented" << std::endl;
-        std::abort();
+    auto Queue::on_submitted_work_done(QueueWorkDoneCallback&& callback) -> void {
+        this->on_submitted_work_done_async(std::forward<QueueWorkDoneCallback>(callback)).get();
+    }
+
+    auto Queue::on_submitted_work_done_async(QueueWorkDoneCallback&& callback) -> std::future<void> {
+        auto promise = std::promise<void>{};
+
+        native::wgpuQueueOnSubmittedWorkDone(
+            *this,
+            callback,
+            &promise
+        );
+
+        return promise.get_future();
     }
 
     auto Queue::label(CStr label) -> void {
@@ -3482,9 +3900,33 @@ namespace wgpu {
 
     // ShaderModule Methods
 
-    auto ShaderModule::get_compilation_info(CompilationInfoCallback&& callback) -> std::unique_ptr<CompilationInfoCallback> {
-        std::cerr << "TODO: Unimplemented" << std::endl;
-        std::abort();
+    auto ShaderModule::get_compilation_info_callback(
+        CompilationInfoRequestStatus status,
+        CompilationInfo* compilation_info,
+        void* promise_raw
+    ) -> void {
+        auto& promise = *reinterpret_cast<std::promise<CompilationInfo>*>(promise_raw);
+        if (status != CompilationInfoRequestStatus::Success) {
+            promise.set_exception(catchme(status));
+        } else {
+            promise.set_value(*compilation_info);
+        }
+    }
+
+    auto ShaderModule::get_compilation_info(CompilationInfoCallback&& callback) -> CompilationInfo {
+        return this->get_compilation_info_async(std::forward<CompilationInfoCallback>(callback)).get();
+    }
+
+    auto ShaderModule::get_compilation_info_async(CompilationInfoCallback&& callback) -> std::future<CompilationInfo> {
+        auto promise = std::promise<CompilationInfo>{};
+
+        native::wgpuShaderModuleGetCompilationInfo(
+            *this,
+            callback,
+            &promise
+        );
+
+        return promise.get_future();
     }
 
     auto ShaderModule::label(CStr label) -> void {
