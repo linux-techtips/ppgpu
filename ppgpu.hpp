@@ -3331,13 +3331,29 @@ namespace wgpu {
         CStr msg,
         void* promise_raw
     ) -> void {
-        std::abort(); 
+        auto& promise = *reinterpret_cast<std::promise<ComputePipeline>*>(promise_raw);
+        if (status != CreatePipelineAsyncStatus::Success) {
+            promise.set_exception(catchme(status, msg));
+        } else {
+            promise.set_value({pipeline});
+        }
     }
 
     auto Device::create_compute_pipeline_async(
         const ComputePipelineDescriptor& desc, 
         CreateComputePipelineAsyncCallback&& callback
-    ) -> std::future<ComputePipeline> { std::abort(); }
+    ) -> std::future<ComputePipeline> {
+        auto promise = std::promise<ComputePipeline>{};
+
+        native::wgpuDeviceCreateComputePipelineAsync(
+            *this,
+            &desc,
+            callback,
+            &promise
+        );
+
+        return promise.get_future();
+    }
 
     auto Device::create_pipeline_layout(const PipelineLayoutDescriptor& desc) -> PipelineLayout {
         return { native::wgpuDeviceCreatePipelineLayout(*this, &desc) };
@@ -3361,7 +3377,12 @@ namespace wgpu {
         CStr msg,
         void* promise_raw
     ) -> void {
-        std::abort();
+        auto& promise = *reinterpret_cast<std::promise<RenderPipeline>*>(promise_raw);
+        if (status != CreatePipelineAsyncStatus::Success) { 
+            promise.set_exception(catchme(status, msg));
+        } else {
+            promise.set_value({pipeline});
+        }
     }
 
     auto Device::create_render_pipeline_async(
