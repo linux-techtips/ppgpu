@@ -131,6 +131,7 @@ namespace wgpu {
         using SwapChain = struct WGPUSwapChainImpl*;
         using Texture = struct WGPUTextureImpl*;
         using TextureView = struct WGPUTextureViewImpl*;
+
     } // namespace impl
 
     // ENUMERATIONS
@@ -139,10 +140,10 @@ namespace wgpu {
     #define ENUM_FORCE32 Force32 = 0x7FFFFFFF
 
     ENUM(AdapterType)
-        DiscreteGPU,
-        IntegratedGPU,
-        CPU,
-        Unknown,
+        DiscreteGPU = 0x0000'0000,
+        IntegratedGPU = 0x0000'0001,
+        CPU = 0x0000'0002,
+        Unknown = 0x0000'0003,
         ENUM_FORCE32
     END
 
@@ -154,32 +155,31 @@ namespace wgpu {
     END
 
     ENUM(BackendType)
-        Undefined = 0x00000000,
-        Null = 0x00000001,
-        WebGPU = 0x00000002,
-        D3D11 = 0x00000003,
-        D3D12 = 0x00000004,
-        Metal = 0x00000005,
-        Vulkan = 0x0000006,
-        OpenGL = 0x00000007,
-        OpenGLES = 0x00000008,
+        Null = 0x0000'0000,
+        WebGPU = 0x0000'0001,
+        D3D11 = 0x0000'0002,
+        D3D12 = 0x0000'0003,
+        Metal = 0x0000'0004,
+        Vulkan = 0x0000'0005,
+        OpenGL = 0x0000'0006,
+        OpenGLES = 0x0000'0007,
         ENUM_FORCE32
     END
 
     ENUM(BlendFactor)
-        Zero,
-        One,
-        Src,
-        OneMinusSrc,
-        SrcAlpha,
-        OneMinusSrcAlpha,
-        Dst,
-        OneMinusDst,
-        DstAlpha,
-        OneMinusDstAlpha,
-        SrcAlphaSaturated,
-        Constant,
-        OneMinusConstant,
+        Zero = 0x0000'0000,
+        One = 0x0000'0001,
+        Src = 0x0000'0002,
+        OneMinusSrc = 0x0000'0003,
+        SrcAlpha = 0x0000'0004,
+        OneMinusSrcAlpha = 0x0000'0005,
+        Dst = 0x0000'000006,
+        OneMinusDst = 0x0000'0007,
+        DstAlpha = 0x0000'0008,
+        OneMinusDstAlpha = 0x0000'0009,
+        SrcAlphaSaturated = 0x0000'000A,
+        Constant = 0x0000'0000B,
+        OneMinusConstant = 0x0000'000C,
         ENUM_FORCE32
     END
 
@@ -395,10 +395,10 @@ namespace wgpu {
     END
 
     ENUM(RequestAdapterStatus)
-        Success = 0x00000000,
-        Unavailable = 0x00000001,
-        Error = 0x00000002,
-        Unknown = 0x00000003,
+        Success = 0x0000'0000,
+        Unavailable = 0x000'00001,
+        Error = 0x0000'0002,
+        Unknown = 0x0000'0003,
         ENUM_FORCE32
     END
 
@@ -410,18 +410,18 @@ namespace wgpu {
     END
 
     ENUM(SType)
-        Invalid,
-        SurfaceDescriptorFromMetalLayer,
-        SurfaceDescriptorFromWindowsHWND,
-        SurfaceDescriptorFromXlibWindow,
-        SurfaceDescriptorFromCanvasHTMLSelector,
-        ShaderModuleSPIRVDescriptor,
-        ShaderModuleWGSLDescriptor,
-        PrimitiveDepthClipControl,
-        SurfaceDescriptorFromWaylandSurface,
-        SurfaceDescriptorFromAndroidNativeWindow,
-        SurfaceDescriptorFromXcbWindow,
-        RenderPassDescriptorMaxDrawCount,
+        Invalid = 0x0000'0000,
+        SurfaceDescriptorFromMetalLayer = 0x0000'0001,
+        SurfaceDescriptorFromWindowsHWND = 0x0000'0002,
+        SurfaceDescriptorFromXlibWindow = 0x0000'0003,
+        SurfaceDescriptorFromCanvasHTMLSelector = 0x0000'0004,
+        ShaderModuleSPIRVDescriptor = 0x0000'0005,
+        ShaderModuleWGSLDescriptor = 0x0000'0006,
+        PrimitiveDepthClipControl = 0x0000'0007,
+        SurfaceDescriptorFromWaylandSurface = 0x0000'00008,
+        SurfaceDescriptorFromAndroidNativeWindow = 0x0000'0009,
+        SurfaceDescriptorFromXcbWindow = 0x0000'000A,
+        RenderPassDescriptorMaxDrawCount = 0x0000'000F,
         ENUM_FORCE32
     END
 
@@ -635,17 +635,17 @@ namespace wgpu {
     END
 
     ENUM(BufferUsage)
-        None = 0x00000000,
-        MapRead = 0x00000001,
-        MapWrite = 0x00000002,
-        CopySrc = 0x00000004,
-        CopyDst = 0x00000008,
-        Index = 0x00000010,
-        Vertex = 0x00000020,
-        Uniform = 0x00000040,
-        Storage = 0x00000080,
-        Indirect = 0x00000100,
-        QueryResolve = 0x00000200,
+        None = 0x0000'0000,
+        MapRead = 0x0000'0001,
+        MapWrite = 0x0000'0002,
+        CopySrc = 0x0000'0004,
+        CopyDst = 0x0000'0008,
+        Index = 0x0000'0010,
+        Vertex = 0x0000'0020,
+        Uniform = 0x0000'0040,
+        Storage = 0x0000'0080,
+        Indirect = 0x0000'0100,
+        QueryResolve = 0x0000'0200,
         ENUM_FORCE32
     END
 
@@ -653,12 +653,12 @@ namespace wgpu {
     END
 
     ENUM(ColorWriteMask)
-        None = 0x00000000,
-        Red = 0x00000001,
-        Green = 0x00000002,
-        Blue = 0x00000004,
-        Alpha = 0x00000008,
-        All = 0x00000010,
+        None = 0x0000'0000,
+        Red = 0x0000'0001,
+        Green = 0x0000'0002,
+        Blue = 0x0000'0004,
+        Alpha = 0x0000'0008,
+        All = 0x0000'0010,
         ENUM_FORCE32
     END
 
@@ -759,234 +759,9 @@ namespace wgpu {
         ENUM_FORCE32
     END
 
-        inline auto operator<<(std::ostream& os, AdapterType value) -> std::ostream& {
-            switch (value) {
-                case AdapterType::DiscreteGPU: return os << "AdapterType::DiscreteGPU";
-                case AdapterType::IntegratedGPU: return os << "AdapterType::IntegratedGPU";
-                case AdapterType::CPU: return os << "AdapterType::CPU";
-                case AdapterType::Unknown: return os << "AdapterType::Unknown";
-                case AdapterType::Force32: return os << "AdapterType::Force32";
-            }
-        }
-
-        inline auto operator<<(std::ostream& os, AddressMode value) -> std::ostream& {
-            switch(value) {
-                case AddressMode::Repeat: return os << "AddressMode::Repeat";
-                case AddressMode::MirrorRepeat: return os << "AddressMode::MirrorRepeat";
-                case AddressMode::ClampToEdge: return os << "AddressMode::ClampToEdge";
-                case AddressMode::Force32: return os << "AddressMode::Force32";
-            }
-        }
-
-        inline auto operator<<(std::ostream& os, BackendType value) -> std::ostream& {
-            switch(value) {
-                case BackendType::Undefined: return os << "BackendType::Undefined";
-                case BackendType::Null: return os << "BackendType::Null";
-                case BackendType::WebGPU: return os << "BackendType::WebGPU";
-                case BackendType::D3D11: return os << "BackendType::D3D11";
-                case BackendType::D3D12: return os << "BackendType::D3D12";
-                case BackendType::Metal: return os << "BackendType::Metal";
-                case BackendType::Vulkan: return os << "BackendType::Vulkan";
-                case BackendType::OpenGL: return os << "BackendType::OpenGL";
-                case BackendType::OpenGLES: return os << "BackendType::OpenGLES";
-                case BackendType::Force32: return os << "BackendType::Force32";
-            }
-        }
-
-        inline auto operator<<(std::ostream& os, BlendFactor value) -> std::ostream& {
-            return os << (int)value; 
-        }
-
-        inline auto operator<<(std::ostream& os, BlendOperation value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, BufferBindingType value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, BufferMapAsyncStatus value) -> std::ostream& {
-            switch(value) {
-                case BufferMapAsyncStatus::Success: return os << "BufferMapAsyncStatus::Success";
-                case BufferMapAsyncStatus::ValidationError: return os << "BufferMapAsyncStatus::ValidationError";
-                case BufferMapAsyncStatus::Unknown: return os << "BufferMapAsyncStatus::Unknown";
-                case BufferMapAsyncStatus::DeviceLost: return os << "BufferMapAsyncStatus::DeviceLost";
-                case BufferMapAsyncStatus::DestroyedBeforeCallback: return os << "BufferMapAsyncStatus::DestroyedBeforeCallback";
-                case BufferMapAsyncStatus::UnmappedBeforeCallback: return os << "BufferMapAsyncStatus::UnmappedBeforeCallback";
-                case BufferMapAsyncStatus::MappingAlreadyPending: return os << "BufferMapAsyncStatus::MappingAlreadyPending";
-                case BufferMapAsyncStatus::OffsetOutOfRange: return os << "BufferMapAsyncStatus::OffsetOutOfRange";
-                case BufferMapAsyncStatus::SizeOutOfRange: return os << "BufferMapAsyncStatus";
-                case BufferMapAsyncStatus::Force32: return os << "BufferMapAsyncStatus::Force32";
-            };
-        }
-
-        inline auto operator<<(std::ostream& os, BufferMapState value) -> std::ostream& {
-            return os << (int)value;
-        }
-        
-        inline auto operator<<(std::ostream& os, CompareFunction value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, CompilationInfoRequestStatus value) -> std::ostream& {
-            switch(value) {
-                case CompilationInfoRequestStatus::Success: return os << "CompilationInfoRequestStatus::Success";
-                case CompilationInfoRequestStatus::Error: return os << "CompilationInfoRequestStatus::Error";
-                case CompilationInfoRequestStatus::DeviceLost: return os << "CompilationInfoRequestStatus::DeviceLost";
-                case CompilationInfoRequestStatus::Unknown: return os << "CompilationInfoRequestStatus::Unknown";
-                case CompilationInfoRequestStatus::Force32: return os << "CompilationInfoRequestStatus::Force32";
-            }
-        }
-
-        inline auto operator<<(std::ostream& os, ComputePassTimestampLocation value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, CreatePipelineAsyncStatus value) -> std::ostream& {
-            switch(value) {
-                case CreatePipelineAsyncStatus::Success: return os << "CreatePipelineAsyncStatus::Success";
-                case CreatePipelineAsyncStatus::ValidationError: return os << "CreatePipelineAsyncStatus::ValidationError";
-                case CreatePipelineAsyncStatus::InternalError: return os << "CreatePipelineAsyncStatus::InternalError";
-                case CreatePipelineAsyncStatus::DeviceLost: return os << "CreatePipelineAsyncStatus::DeviceLost";
-                case CreatePipelineAsyncStatus::DeviceDestroyed: return os << "CreatePipelineAsyncStatus::DeviceDestroyed";
-                case CreatePipelineAsyncStatus::Unknown: return os << "CreatePipelineAsyncStatus::Unknown";
-                case CreatePipelineAsyncStatus::Force32 : return os << "CreatePipelineAsyncStatus::Force32";
-            }
-        }
-
-        inline auto operator<<(std::ostream& os, CullMode value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, DeviceLostReason value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, ErrorFilter value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, ErrorType value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, FeatureName value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, FilterMode value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, FrontFace value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, IndexFormat value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, LoadOp value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, MipmapFilterMode value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-        inline auto operator<<(std::ostream& os, PipelineStatisticsName value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, PowerPreference value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, PresentMode value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, PrimitiveTopology value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, QueryType value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, QueueWorkDoneStatus value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, RenderPassTimestampLocation value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, RequestAdapterStatus value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, RequestDeviceAsyncStatus value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, SType value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, SamplerBindingType value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, StencilOperation value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, StorageTextureAccess value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, StoreOp value) -> std::ostream& {
-            return os << (int)value;
-        }
- 
-        inline auto operator<<(std::ostream& os, TextureAspect value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-       inline auto operator<<(std::ostream& os, TextureDimension value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-       inline auto operator<<(std::ostream& os, TextureFormat value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-       inline auto operator<<(std::ostream& os, VertexStepMode value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-       inline auto operator<<(std::ostream& os, BufferUsage value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-       inline auto operator<<(std::ostream& os, ColorWriteMask value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-       inline auto operator<<(std::ostream& os, MapMode value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-       inline auto operator<<(std::ostream& os, ShaderStage value) -> std::ostream& {
-            return os << (int)value;
-        }
-
-       inline auto operator<<(std::ostream& os, TextureUsage value) -> std::ostream& {
-            return os << (int)value;
-        }
-
     // PLATFORM DEFAULTS
+
+    // TODO: Expand platform defaults
 
     template <typename T>
     static constexpr T PlatformDefault;
@@ -1029,7 +804,8 @@ namespace wgpu {
     );
 
     // STRUCTURES
-    
+ 
+#ifdef _WGPU_H_COMPAT
     template <typename To, typename From>
     concept NonAggregateWGPUCompatible =
         std::is_standard_layout_v<To> &&
@@ -1052,7 +828,6 @@ namespace wgpu {
         } 
     };
 
-#ifdef _WGPU_H_COMPAT
     #define STRUCT_CAST_IMPL(Name, Cast) \
         struct Name { \
             using WSelf = WGPU ## Name; \
@@ -1260,15 +1035,18 @@ namespace wgpu {
 
     namespace {
 
+        // TODO: Remove catchme implementation
+        // TODO: Remove async dependency or hide it behind a flag or something
+
         #define CATCHME_MSG_IMPL(Status) \
             inline auto catchme(Status status, CStr msg) -> std::exception_ptr { \
-                const auto msg_stream = std::stringstream{} << "[FATAL] " << status << ": " << msg; \
+                const auto msg_stream = std::stringstream{} << "[FATAL] Status Code: " << static_cast<int32_t>(status) << ": " << msg; \
                 return std::make_exception_ptr(std::runtime_error(msg_stream.str())); \
             }
 
         #define CATCHME_IMPL(Status) \
             inline auto catchme(Status status) -> std::exception_ptr { \
-                const auto msg_stream = std::stringstream{} << "[FATAL] " << status; \
+                const auto msg_stream = std::stringstream{} << "[FATAL] Status Code: " << static_cast<int32_t>(status); \
                 return std::make_exception_ptr(std::runtime_error(msg_stream.str())); \
             }
 
@@ -1284,6 +1062,9 @@ namespace wgpu {
     }
 
     // DESCRIPTORS
+
+    // TODO Expand and update platform defaults
+
     #define DESCRIPTOR(Type) \
         STRUCT(Type) \
         ChainedStructOut* next_in_chain{}; \
