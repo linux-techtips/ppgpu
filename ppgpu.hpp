@@ -1,10 +1,10 @@
 #pragma once
 
 #include <exception>
-#include <future>
 #include <iostream>
 #include <sstream>
 #include <utility>
+#include <future>
 
 #define WGPU_TARGET_MACOS 1
 #define WGPU_TARGET_LINUX_X11 2
@@ -2429,7 +2429,7 @@ namespace wgpu {
         [[nodiscard]] inline auto get_limits(SupportedLimits* limits) -> bool;
         inline auto get_properties(AdapterProperties* properties) -> void;
         [[nodiscard]] inline auto has_feature(FeatureName feature) -> bool;
-        static auto request_device_callback(
+        inline auto request_device_callback(
             RequestDeviceAsyncStatus status,
             impl::Device device,
             CStr msg,
@@ -2437,11 +2437,11 @@ namespace wgpu {
         ) -> void;
         [[nodiscard]] inline auto request_device(
             const DeviceDescriptor& desc,
-            RequestDeviceCallback&& callback = Adapter::request_device_callback
+            RequestDeviceCallback&& callback
         ) -> Device;
         [[nodiscard]] inline auto request_device_async(
             const DeviceDescriptor& descriptor,
-            RequestDeviceCallback&& callback = Adapter::request_device_callback
+            RequestDeviceCallback&& callback
         ) -> std::future<Device>; 
     END
 
@@ -2460,12 +2460,12 @@ namespace wgpu {
         [[nodiscard]] inline auto get_map_state() -> BufferMapState;
         [[nodiscard]] inline auto get_size() -> uint64_t;
         [[nodiscard]] inline auto get_usage() -> BufferUsageFlags;
-        static auto map_callback(BufferMapAsyncStatus status, void* promise_raw) -> void;
+        inline auto map_callback(BufferMapAsyncStatus status, void* promise_raw) -> void;
         [[nodiscard]] inline auto map_async(
             MapModeFlags mode,
             size_t offset,
             size_t size,
-            BufferMapCallback&& callback = Buffer::map_callback
+            BufferMapCallback&& callback
         ) -> std::future<void>;
         inline auto unmap() -> void;
     END
@@ -2548,7 +2548,7 @@ namespace wgpu {
         [[nodiscard]] inline auto create_buffer(const BufferDescriptor& desc) -> Buffer;
         [[nodiscard]] inline auto create_command_encoder(const CommandEncoderDescriptor& desc) -> CommandEncoder;
         [[nodiscard]] inline auto create_compute_pipeline(const ComputePipelineDescriptor& desc) -> ComputePipeline;
-        static auto create_compute_pipeline_callback(
+        inline auto create_compute_pipeline_callback(
             CreatePipelineAsyncStatus status,
             impl::ComputePipeline pipeline,
             CStr msg,
@@ -2556,13 +2556,13 @@ namespace wgpu {
         ) -> void;
         [[nodiscard]] inline auto create_compute_pipeline_async(
             const ComputePipelineDescriptor& desc,
-            CreateComputePipelineAsyncCallback&& callback = Device::create_compute_pipeline_callback
+            CreateComputePipelineAsyncCallback&& callback 
         ) -> std::future<ComputePipeline>; 
         [[nodiscard]] inline auto create_pipeline_layout(const PipelineLayoutDescriptor& desc) -> PipelineLayout;
         [[nodiscard]] inline auto create_query_set(const QuerySetDescriptor& desc) -> QuerySet;
         [[nodiscard]] inline auto create_render_bundle_encoder(const RenderBundleEncoderDescriptor& desc) -> RenderBundleEncoder;
         [[nodiscard]] inline auto create_render_pipeline(const RenderPipelineDescriptor& desc) -> RenderPipeline;
-        static auto create_render_pipeline_callback(
+        inline auto create_render_pipeline_callback(
             CreatePipelineAsyncStatus status,
             impl::RenderPipeline pipeline, 
             CStr msg,
@@ -2570,7 +2570,7 @@ namespace wgpu {
         ) -> void;
         [[nodiscard]] inline auto create_render_pipeline_async(
             const RenderPipelineDescriptor& desc,
-            CreateRenderPipelineAsyncCallback&& callback = Device::create_render_pipeline_callback
+            CreateRenderPipelineAsyncCallback&& callback 
         ) -> std::future<RenderPipeline>;
         [[nodiscard]] inline auto create_sampler(const SamplerDescriptor& desc) -> Sampler;
         [[nodiscard]] inline auto create_shader_module(const ShaderModuleDescriptor& desc) -> ShaderModule;
@@ -2591,7 +2591,7 @@ namespace wgpu {
         [[nodiscard]] static inline auto init(const InstanceDescriptor& desc) -> Instance;
         [[nodiscard]] static inline auto init() -> Instance;
         [[nodiscard]] inline auto create_surface(const SurfaceDescriptor& desc) -> Surface; 
-        static auto request_adapter_callback(
+        inline auto request_adapter_callback(
             RequestAdapterStatus status,
             impl::Adapter adapter,
             CStr msg,
@@ -2599,11 +2599,11 @@ namespace wgpu {
         ) -> void;
         [[nodiscard]] inline auto request_adapter(
             const RequestAdapterOptions& opts,
-            RequestAdapterCallback&& callback = Instance::request_adapter_callback
+            RequestAdapterCallback&& callback 
         ) -> Adapter;
         [[nodiscard]] inline auto request_adapter_async(
             const RequestAdapterOptions& opts,
-            RequestAdapterCallback&& callback = Instance::request_adapter_callback
+            RequestAdapterCallback&& callback
         ) -> std::future<Adapter>;
         inline auto process_events() -> void;
     END
@@ -2620,7 +2620,7 @@ namespace wgpu {
     END
 
     HANDLE(Queue)
-        static auto on_submitted_work_done_callback(QueueWorkDoneStatus status, void* promise_raw) -> void;
+        inline auto on_submitted_work_done_callback(QueueWorkDoneStatus status, void* promise_raw) -> void;
         inline auto on_submitted_work_done(
             QueueWorkDoneCallback&& callback
         ) -> void;
@@ -2761,16 +2761,16 @@ namespace wgpu {
     END
 
     HANDLE(ShaderModule)
-        static auto get_compilation_info_callback(
+        inline auto get_compilation_info_callback(
             CompilationInfoRequestStatus status,
             CompilationInfo* compilation_info,
             void* user_data
         ) -> void;
         [[nodiscard]] inline auto get_compilation_info(
-            CompilationInfoCallback&& callback = ShaderModule::get_compilation_info_callback
+            CompilationInfoCallback&& callback
         ) -> CompilationInfo;
         [[nodiscard]] inline auto get_compilation_info_async(
-            CompilationInfoCallback&& callback = ShaderModule::get_compilation_info_callback
+            CompilationInfoCallback&& callback
         ) -> std::future<CompilationInfo>;
         inline auto label(CStr label) -> void;
     END
